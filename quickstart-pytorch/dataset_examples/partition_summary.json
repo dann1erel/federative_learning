@@ -1,0 +1,65 @@
+{
+  "dataset_id": "uoft-cs/cifar10",
+  "train_samples": 50000,
+  "test_samples": 10000,
+  "classes": [
+    "airplane",
+    "automobile",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck"
+  ],
+  "seed": 42,
+  "min_partition_size": 50,
+  "scenarios": [
+    {
+      "partitioner": "iid",
+      "alpha": null,
+      "num_clients": 10,
+      "total_samples": 50000,
+      "min_client_samples": 5000,
+      "max_client_samples": 5000,
+      "mean_client_samples": 5000,
+      "quantity_coefficient_of_variation": 0.0,
+      "mean_normalized_label_entropy": 0.9996751362333332
+    },
+    {
+      "partitioner": "dirichlet",
+      "alpha": 1.0,
+      "num_clients": 10,
+      "total_samples": 50000,
+      "min_client_samples": 3087,
+      "max_client_samples": 7209,
+      "mean_client_samples": 5000,
+      "quantity_coefficient_of_variation": 0.24438923053195286,
+      "mean_normalized_label_entropy": 0.8598023608269445
+    },
+    {
+      "partitioner": "dirichlet",
+      "alpha": 0.5,
+      "num_clients": 10,
+      "total_samples": 50000,
+      "min_client_samples": 1560,
+      "max_client_samples": 7754,
+      "mean_client_samples": 5000,
+      "quantity_coefficient_of_variation": 0.42799680372638294,
+      "mean_normalized_label_entropy": 0.7383962525929147
+    },
+    {
+      "partitioner": "dirichlet",
+      "alpha": 0.1,
+      "num_clients": 10,
+      "total_samples": 50000,
+      "min_client_samples": 526,
+      "max_client_samples": 14604,
+      "mean_client_samples": 5000,
+      "quantity_coefficient_of_variation": 0.7303715273749382,
+      "mean_normalized_label_entropy": 0.37326603923219553
+    }
+  ]
+}

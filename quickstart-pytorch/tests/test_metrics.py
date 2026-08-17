@@ -1,7 +1,14 @@
 import math
 import unittest
 
-from pytorchexample.task import metrics_for_flower, metrics_from_confusion_matrix
+from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
+
+from pytorchexample.task import (
+    create_partitioner,
+    metrics_for_flower,
+    metrics_from_confusion_matrix,
+    resolve_dataset_id,
+)
 
 
 class MetricsTest(unittest.TestCase):
@@ -28,6 +35,26 @@ class MetricsTest(unittest.TestCase):
         self.assertTrue(math.isclose(metrics["recall_macro"], 0.5))
         self.assertEqual(metrics["per_class_metrics"][1]["f1"], 0.0)
         self.assertEqual(flower["confusion_matrix"], [2, 0, 1, 0])
+
+
+class PartitionerTest(unittest.TestCase):
+    def test_dataset_alias(self):
+        self.assertEqual(resolve_dataset_id("cifar10"), "uoft-cs/cifar10")
+        with self.assertRaisesRegex(ValueError, "supports only 'cifar10'"):
+            resolve_dataset_id("cifar100")
+
+    def test_supported_partitioners(self):
+        self.assertIsInstance(create_partitioner("iid", 10), IidPartitioner)
+        self.assertIsInstance(
+            create_partitioner("dirichlet", 10, dirichlet_alpha=0.5),
+            DirichletPartitioner,
+        )
+
+    def test_invalid_partitioner_parameters(self):
+        with self.assertRaisesRegex(ValueError, "expected 'iid' or 'dirichlet'"):
+            create_partitioner("unknown", 10)
+        with self.assertRaisesRegex(ValueError, "greater than zero"):
+            create_partitioner("dirichlet", 10, dirichlet_alpha=0)
 
 
 if __name__ == "__main__":

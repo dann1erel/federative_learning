@@ -8,6 +8,20 @@ framework: [torch, torchvision]
 
 This introductory example to Flower uses PyTorch, but deep knowledge of PyTorch is not necessarily required to run the example. However, it will help you understand how to adapt Flower to your use case. Running this example in itself is quite easy. This example uses [Flower Datasets](https://flower.ai/docs/datasets/) to download, partition and preprocess the CIFAR-10 dataset.
 
+## Dataset and non-IID scenarios
+
+The experiment uses CIFAR-10 with a configurable IID or label-based Dirichlet
+partition. The default is the moderately non-IID `dirichlet-alpha=0.5` scenario.
+The official test split stays centralized. See [DATASET.md](DATASET.md) for the
+selection rationale, limitations, and experiment protocol.
+
+Download/cache the dataset and generate sample images, per-client class tables,
+and distribution heatmaps:
+
+```bash
+python scripts/prepare_cifar10.py
+```
+
 ## Set up the project
 
 ### Fetch the app

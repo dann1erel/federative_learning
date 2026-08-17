@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
 from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import IidPartitioner
+from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, ToTensor
 
@@ -31,7 +31,12 @@ class Net(nn.Module):
         return self.fc3(x)
 
 
-fds = None  # Cache FederatedDataset
+DATASET_ID = "uoft-cs/cifar10"
+
+# A client process can request its train and validation loaders separately. Cache one
+# FederatedDataset per partition configuration so both requests reuse exactly the same
+# deterministic client split.
+_fds_cache: dict[tuple[str, str, int, float, int, int], FederatedDataset] = {}
 
 pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
@@ -56,32 +61,110 @@ def apply_transforms(batch):
     return batch
 
 
-def load_data(partition_id: int, num_partitions: int, batch_size: int):
-    """Load partition CIFAR10 data."""
-    # Only initialize `FederatedDataset` once
-    global fds
-    if fds is None:
-        partitioner = IidPartitioner(num_partitions=num_partitions)
-        fds = FederatedDataset(
-            dataset="uoft-cs/cifar10",
-            partitioners={"train": partitioner},
+def resolve_dataset_id(dataset_name: str) -> str:
+    """Resolve the supported dataset alias to its Hugging Face identifier."""
+    if dataset_name.strip().lower() in {"cifar10", DATASET_ID}:
+        return DATASET_ID
+    raise ValueError(
+        f"Unknown dataset {dataset_name!r}; this experiment supports only 'cifar10'"
+    )
+
+
+def create_partitioner(
+    name: str,
+    num_partitions: int,
+    dirichlet_alpha: float = 0.5,
+    min_partition_size: int = 50,
+    seed: int = 42,
+):
+    """Create a reproducible IID or label-skew partitioner."""
+    normalized_name = name.strip().lower()
+    if normalized_name == "iid":
+        return IidPartitioner(num_partitions=num_partitions)
+    if normalized_name == "dirichlet":
+        if dirichlet_alpha <= 0:
+            raise ValueError("dirichlet_alpha must be greater than zero")
+        if min_partition_size <= 0:
+            raise ValueError("min_partition_size must be greater than zero")
+        return DirichletPartitioner(
+            num_partitions=num_partitions,
+            partition_by="label",
+            alpha=dirichlet_alpha,
+            min_partition_size=min_partition_size,
+            # Keep this disabled so the experiment can expose quantity skew as well
+            # as label skew. Per-client sample counts are saved by the prep script.
+            self_balancing=False,
+            shuffle=True,
+            seed=seed,
         )
-    partition = fds.load_partition(partition_id)
-    # Divide data on each node: 80% train, 20% test
-    partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
+    raise ValueError(
+        f"Unknown partitioner {name!r}; expected 'iid' or 'dirichlet'"
+    )
+
+
+def load_data(
+    partition_id: int,
+    num_partitions: int,
+    batch_size: int,
+    dataset_name: str = "cifar10",
+    partitioner_name: str = "dirichlet",
+    dirichlet_alpha: float = 0.5,
+    min_partition_size: int = 50,
+    seed: int = 42,
+    validation_ratio: float = 0.2,
+):
+    """Load one reproducible CIFAR-10 client partition."""
+    if not 0 < validation_ratio < 1:
+        raise ValueError("validation_ratio must be between zero and one")
+
+    dataset_id = resolve_dataset_id(dataset_name)
+    normalized_name = partitioner_name.strip().lower()
+    cache_key = (
+        dataset_id,
+        normalized_name,
+        num_partitions,
+        float(dirichlet_alpha),
+        min_partition_size,
+        seed,
+    )
+    if cache_key not in _fds_cache:
+        partitioner = create_partitioner(
+            name=normalized_name,
+            num_partitions=num_partitions,
+            dirichlet_alpha=dirichlet_alpha,
+            min_partition_size=min_partition_size,
+            seed=seed,
+        )
+        _fds_cache[cache_key] = FederatedDataset(
+            dataset=dataset_id,
+            partitioners={"train": partitioner},
+            shuffle=True,
+            seed=seed,
+        )
+
+    partition = _fds_cache[cache_key].load_partition(partition_id)
+    # Keep the official test split centralized; only the client's train partition
+    # is split into local train and validation subsets.
+    partition_train_test = partition.train_test_split(
+        test_size=validation_ratio,
+        seed=seed,
+    )
     # Construct dataloaders
     partition_train_test = partition_train_test.with_transform(apply_transforms)
     trainloader = DataLoader(
-        partition_train_test["train"], batch_size=batch_size, shuffle=True
+        partition_train_test["train"],
+        batch_size=batch_size,
+        shuffle=True,
+        generator=torch.Generator().manual_seed(seed + partition_id),
     )
     testloader = DataLoader(partition_train_test["test"], batch_size=batch_size)
     return trainloader, testloader
 
 
-def load_centralized_dataset():
+def load_centralized_dataset(dataset_name: str = "cifar10"):
     """Load test set and return dataloader."""
     # Load entire test set
-    test_dataset = load_dataset("uoft-cs/cifar10", split="test")
+    test_dataset = load_dataset(resolve_dataset_id(dataset_name), split="test")
     dataset = test_dataset.with_format("torch").with_transform(apply_transforms)
     return DataLoader(dataset, batch_size=128)
 
