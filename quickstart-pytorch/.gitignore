@@ -1,0 +1,19 @@
+# Local Python environments
+venv/
+.venv/
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Build and test artifacts
+build/
+dist/
+*.fab
+.pytest_cache/
+
+# Local editor and OS metadata
+.DS_Store
+.idea/
+.vscode/

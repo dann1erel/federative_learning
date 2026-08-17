@@ -4,7 +4,7 @@ import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
-from pytorchexample.task import Net, load_data
+from pytorchexample.task import Net, load_data, metrics_for_flower
 from pytorchexample.task import test as test_fn
 from pytorchexample.task import train as train_fn
 
@@ -65,7 +65,7 @@ def evaluate(msg: Message, context: Context):
     _, valloader = load_data(partition_id, num_partitions, batch_size)
 
     # Call the evaluation function
-    eval_loss, eval_acc = test_fn(
+    evaluation_metrics = test_fn(
         model,
         valloader,
         device,
@@ -73,8 +73,7 @@ def evaluate(msg: Message, context: Context):
 
     # Construct and return reply Message
     metrics = {
-        "eval_loss": eval_loss,
-        "eval_acc": eval_acc,
+        **metrics_for_flower(evaluation_metrics),
         "num-examples": len(valloader.dataset),
     }
     metric_record = MetricRecord(metrics)

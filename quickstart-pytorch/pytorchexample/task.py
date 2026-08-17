@@ -35,6 +35,20 @@ fds = None  # Cache FederatedDataset
 
 pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
+NUM_CLASSES = 10
+CLASS_NAMES = [
+    "airplane",
+    "automobile",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck",
+]
+
 
 def apply_transforms(batch):
     """Apply transforms to the partition from FederatedDataset."""
@@ -92,18 +106,94 @@ def train(net, trainloader, epochs, lr, device):
     return avg_trainloss
 
 
+def metrics_from_confusion_matrix(confusion_matrix):
+    """Calculate multiclass metrics from an actual-by-predicted matrix."""
+    matrix = torch.as_tensor(confusion_matrix, dtype=torch.float64)
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("confusion_matrix must be a square matrix")
+
+    true_positive = matrix.diag()
+    support = matrix.sum(dim=1)
+    predicted = matrix.sum(dim=0)
+
+    precision = torch.where(predicted > 0, true_positive / predicted, 0.0)
+    recall = torch.where(support > 0, true_positive / support, 0.0)
+    denominator = precision + recall
+    f1 = torch.where(denominator > 0, 2 * precision * recall / denominator, 0.0)
+
+    total = support.sum()
+    weights = support / total if total > 0 else torch.zeros_like(support)
+    accuracy = true_positive.sum() / total if total > 0 else matrix.new_tensor(0.0)
+
+    per_class_metrics = [
+        {
+            "class_id": class_id,
+            "class_name": CLASS_NAMES[class_id]
+            if len(support) == len(CLASS_NAMES)
+            else str(class_id),
+            "support": int(support[class_id].item()),
+            "precision": float(precision[class_id].item()),
+            "recall": float(recall[class_id].item()),
+            "f1": float(f1[class_id].item()),
+        }
+        for class_id in range(len(support))
+    ]
+    return {
+        "accuracy": float(accuracy.item()),
+        "precision_macro": float(precision.mean().item()),
+        "recall_macro": float(recall.mean().item()),
+        "f1_macro": float(f1.mean().item()),
+        "precision_weighted": float((precision * weights).sum().item()),
+        "recall_weighted": float((recall * weights).sum().item()),
+        "f1_weighted": float((f1 * weights).sum().item()),
+        "per_class_metrics": per_class_metrics,
+        "confusion_matrix": matrix.to(torch.int64).tolist(),
+    }
+
+
+def metrics_for_flower(metrics):
+    """Flatten structured evaluation metrics into Flower-supported values."""
+    per_class = metrics["per_class_metrics"]
+    return {
+        "loss": metrics["loss"],
+        "accuracy": metrics["accuracy"],
+        "precision_macro": metrics["precision_macro"],
+        "recall_macro": metrics["recall_macro"],
+        "f1_macro": metrics["f1_macro"],
+        "precision_weighted": metrics["precision_weighted"],
+        "recall_weighted": metrics["recall_weighted"],
+        "f1_weighted": metrics["f1_weighted"],
+        "per_class_precision": [item["precision"] for item in per_class],
+        "per_class_recall": [item["recall"] for item in per_class],
+        "per_class_f1": [item["f1"] for item in per_class],
+        "per_class_support": [item["support"] for item in per_class],
+        # MetricRecord accepts one-dimensional scalar lists.
+        "confusion_matrix": [
+            value for row in metrics["confusion_matrix"] for value in row
+        ],
+    }
+
+
 def test(net, testloader, device):
-    """Validate the model on the test set."""
+    """Evaluate a model and return all classification metrics."""
     net.to(device)
-    criterion = torch.nn.CrossEntropyLoss()
-    correct, loss = 0, 0.0
+    net.eval()
+    criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+    confusion_matrix = torch.zeros((NUM_CLASSES, NUM_CLASSES), dtype=torch.int64)
+    loss, num_examples = 0.0, 0
     with torch.no_grad():
         for batch in testloader:
             images = batch["img"].to(device)
             labels = batch["label"].to(device)
             outputs = net(images)
             loss += criterion(outputs, labels).item()
-            correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
-    accuracy = correct / len(testloader.dataset)
-    loss = loss / len(testloader)
-    return loss, accuracy
+            predictions = outputs.argmax(dim=1)
+            indices = labels.detach().cpu() * NUM_CLASSES + predictions.detach().cpu()
+            confusion_matrix += torch.bincount(
+                indices, minlength=NUM_CLASSES * NUM_CLASSES
+            ).reshape(NUM_CLASSES, NUM_CLASSES)
+            num_examples += labels.numel()
+
+    metrics = metrics_from_confusion_matrix(confusion_matrix)
+    metrics["loss"] = loss / num_examples if num_examples else 0.0
+    return metrics
