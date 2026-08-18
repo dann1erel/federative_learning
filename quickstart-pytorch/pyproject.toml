@@ -11,6 +11,7 @@ dependencies = [
     "datasets>=3.1.0",
     "flwr[simulation]>=1.28.0",
     "flwr-datasets[vision]>=0.6.0",
+    "kagglehub>=0.3.12",
     "pillow>=10.0.0",
     "torch==2.10.0",
     "torchvision==0.25.0",
@@ -36,8 +37,10 @@ learning-rate = 0.1
 batch-size = 32
 save-model = false
 dataset = "cifar10"
+dataset-root = "data/ham10000"
 partitioner = "dirichlet"
 dirichlet-alpha = 0.5
 dirichlet-min-partition-size = 50
 validation-ratio = 0.2
 seed = 42
+class-weighting = "none"

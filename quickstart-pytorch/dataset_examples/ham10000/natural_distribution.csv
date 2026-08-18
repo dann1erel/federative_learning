@@ -1,0 +1,5 @@
+client_id,total_samples,class_0_akiec,class_1_bcc,class_2_bkl,class_3_df,class_4_mel,class_5_nv,class_6_vasc
+0,2259,295,296,490,30,342,803,3
+1,3372,32,211,475,51,689,1832,82
+2,3945,0,2,124,30,15,3720,54
+3,439,0,5,10,4,67,350,3

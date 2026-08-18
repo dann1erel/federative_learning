@@ -15,11 +15,23 @@ partition. The default is the moderately non-IID `dirichlet-alpha=0.5` scenario.
 The official test split stays centralized. See [DATASET.md](DATASET.md) for the
 selection rationale, limitations, and experiment protocol.
 
+The second supported dataset is naturally imbalanced HAM10000 from Kaggle. Its
+seven classes have a majority/minority ratio of about 58:1. The pipeline keeps
+all images of one `lesion_id` together, supports a four-source natural
+federation, and optionally uses globally balanced cross-entropy weights. See
+[HAM10000.md](HAM10000.md).
+
 Download/cache the dataset and generate sample images, per-client class tables,
 and distribution heatmaps:
 
 ```bash
 python scripts/prepare_cifar10.py
+```
+
+Prepare HAM10000 (approximately 3.2 GB in the Kaggle cache):
+
+```bash
+python scripts/prepare_ham10000.py
 ```
 
 ## Set up the project

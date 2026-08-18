@@ -13,6 +13,9 @@ dist/
 *.fab
 .pytest_cache/
 
+# Downloaded datasets and generated local manifests
+data/
+
 # Local editor and OS metadata
 .DS_Store
 .idea/
