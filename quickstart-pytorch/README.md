@@ -1,6 +1,6 @@
 ---
 tags: [quickstart, vision, fds]
-dataset: [CIFAR-10]
+dataset: [CIFAR-10, HAM10000, FER2013, Cassava Leaf Disease 2020]
 framework: [torch, torchvision]
 ---
 
@@ -21,6 +21,11 @@ all images of one `lesion_id` together, supports a four-source natural
 federation, and optionally uses globally balanced cross-entropy weights. See
 [HAM10000.md](HAM10000.md).
 
+Five naturally imbalanced alternatives were also screened using a transparent
+weighted rubric. HAM10000, FER2013, and Cassava 2020 received executable
+adapters/smoke tests; the scientific comparison and final selection rationale
+are in [DATASET_COMPARISON.md](DATASET_COMPARISON.md).
+
 Download/cache the dataset and generate sample images, per-client class tables,
 and distribution heatmaps:
 
@@ -32,6 +37,28 @@ Prepare HAM10000 (approximately 3.2 GB in the Kaggle cache):
 
 ```bash
 python scripts/prepare_ham10000.py
+```
+
+Prepare the lightweight FER2013 alternative (about 60 MB):
+
+```bash
+python scripts/prepare_candidate_dataset.py --dataset fer2013
+```
+
+Prepare Cassava 2020 (about 6.19 GB; Kaggle authentication and accepted
+competition rules are required):
+
+```bash
+python scripts/prepare_candidate_dataset.py --dataset cassava
+```
+
+The same command accepts `--source-dir` for an existing local download. Example
+Flower overrides are stored in `configs/fer2013_dirichlet.toml` and
+`configs/cassava_dirichlet.toml`.
+
+```bash
+flwr run . --run-config configs/fer2013_dirichlet.toml --stream
+flwr run . --run-config configs/cassava_dirichlet.toml --stream
 ```
 
 ## Set up the project

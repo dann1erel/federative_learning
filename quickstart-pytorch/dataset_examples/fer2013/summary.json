@@ -1,0 +1,20 @@
+{
+  "dataset": "fer2013",
+  "source_reference": "msambare/fer2013/versions/1",
+  "source_mode": "kaggle_download",
+  "published_counts_verified": true,
+  "train_images": 28709,
+  "test_images": 7178,
+  "num_classes": 7,
+  "class_counts": {
+    "angry": 4953,
+    "disgust": 547,
+    "fear": 5121,
+    "happy": 8989,
+    "neutral": 6198,
+    "sad": 6077,
+    "surprise": 4002
+  },
+  "imbalance_ratio": 16.43327239488117,
+  "seed": 42
+}

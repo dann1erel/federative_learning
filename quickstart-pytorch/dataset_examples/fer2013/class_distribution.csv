@@ -1,0 +1,8 @@
+class_id,class_name,train,test,total
+0,angry,3995,958,4953
+1,disgust,436,111,547
+2,fear,4097,1024,5121
+3,happy,7215,1774,8989
+4,neutral,4965,1233,6198
+5,sad,4830,1247,6077
+6,surprise,3171,831,4002

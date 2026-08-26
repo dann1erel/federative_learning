@@ -1,5 +1,8 @@
+import csv
 import math
+import tempfile
 import unittest
+from pathlib import Path
 
 import torch
 from datasets import Dataset
@@ -8,6 +11,7 @@ from flwr_datasets.partitioner import (
     IidPartitioner,
     NaturalIdPartitioner,
 )
+from PIL import Image
 
 from pytorchexample.task import (
     GroupedPartitionSource,
@@ -16,6 +20,7 @@ from pytorchexample.task import (
     create_partitioner,
     get_dataset_spec,
     grouped_train_test_split,
+    load_data,
     metrics_for_flower,
     metrics_from_confusion_matrix,
     resolve_dataset_id,
@@ -60,11 +65,64 @@ class MetricsTest(unittest.TestCase):
 
 
 class PartitionerTest(unittest.TestCase):
+    def test_local_candidate_manifest_loads_as_rgb_batch(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            rows = []
+            for label in range(5):
+                for item_id in range(4):
+                    image_path = root / f"{label}_{item_id}.png"
+                    Image.new("RGB", (12, 10), color=(label * 20, 30, 40)).save(
+                        image_path
+                    )
+                    rows.append(
+                        {
+                            "image_id": image_path.name,
+                            "label": label,
+                            "image_path": str(image_path),
+                            "source": "fixture",
+                        }
+                    )
+            with (root / "train.csv").open("w", newline="", encoding="utf-8") as file:
+                writer = csv.DictWriter(
+                    file,
+                    fieldnames=["image_id", "label", "image_path", "source"],
+                )
+                writer.writeheader()
+                writer.writerows(rows)
+
+            trainloader, _ = load_data(
+                partition_id=0,
+                num_partitions=2,
+                batch_size=4,
+                dataset_name="cassava",
+                dataset_root=root,
+                partitioner_name="iid",
+                validation_ratio=0.2,
+                seed=13,
+            )
+            batch = next(iter(trainloader))
+
+            self.assertEqual(tuple(batch["img"].shape[1:]), (3, 64, 64))
+            self.assertTrue(torch.all(batch["label"] < 5))
+
     def test_dataset_alias(self):
         self.assertEqual(resolve_dataset_id("cifar10"), "uoft-cs/cifar10")
         self.assertEqual(get_dataset_spec("ham-10000").num_classes, 7)
         with self.assertRaisesRegex(ValueError, "supported datasets"):
             resolve_dataset_id("cifar100")
+
+    def test_alternative_dataset_specs_match_manifest_labels(self):
+        fer2013 = get_dataset_spec("fer-2013")
+        cassava = get_dataset_spec("cassava-2020")
+
+        self.assertEqual(fer2013.class_names[1], "disgust")
+        self.assertEqual(fer2013.image_size, 48)
+        self.assertEqual(
+            cassava.class_names,
+            ("cbb", "cbsd", "cgm", "cmd", "healthy"),
+        )
+        self.assertEqual(cassava.num_classes, 5)
 
     def test_supported_partitioners(self):
         self.assertIsInstance(create_partitioner("iid", 10), IidPartitioner)

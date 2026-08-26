@@ -20,6 +20,11 @@ from flwr_datasets.partitioner import (
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, Resize, ToTensor
 
+from pytorchexample.dataset_adapters import (
+    CASSAVA_CLASS_NAMES,
+    FER2013_CLASS_NAMES,
+)
+
 
 CIFAR10_CLASS_NAMES = (
     "airplane",
@@ -64,6 +69,16 @@ DATASET_SPECS = {
         image_size=64,
         group_column="lesion_id",
     ),
+    "fer2013": DatasetSpec(
+        name="fer2013",
+        class_names=FER2013_CLASS_NAMES,
+        image_size=48,
+    ),
+    "cassava": DatasetSpec(
+        name="cassava",
+        class_names=CASSAVA_CLASS_NAMES,
+        image_size=64,
+    ),
 }
 DATASET_ALIASES = {
     "cifar-10": "cifar10",
@@ -72,6 +87,11 @@ DATASET_ALIASES = {
     "skin-cancer-mnist-ham10000": "ham10000",
     "kmader/skin-cancer-mnist-ham10000": "ham10000",
     "eliocordeiropereira/skin-cancer-the-ham10000-dataset": "ham10000",
+    "fer-2013": "fer2013",
+    "msambare/fer2013": "fer2013",
+    "cassava-2020": "cassava",
+    "cassava-leaf-disease": "cassava",
+    "cassava-leaf-disease-classification": "cassava",
 }
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -158,7 +178,7 @@ def resolve_dataset_root(dataset_root: str | Path) -> Path:
 
 
 def load_local_split(dataset_root: str | Path, split: str) -> Dataset:
-    """Load an image dataset split from a preparation-script manifest."""
+    """Load an image dataset split from a normalized preparation manifest."""
     root = resolve_dataset_root(dataset_root)
     cache_key = (str(root.resolve()), split)
     if cache_key in _local_split_cache:
@@ -171,7 +191,7 @@ def load_local_split(dataset_root: str | Path, split: str) -> Dataset:
         )
     with manifest_path.open(newline="", encoding="utf-8") as file:
         rows = list(csv.DictReader(file))
-    required_columns = {"image_path", "label", "lesion_id"}
+    required_columns = {"image_path", "label"}
     if not rows or not required_columns.issubset(rows[0]):
         raise ValueError(
             f"{manifest_path} must contain: {', '.join(sorted(required_columns))}"
@@ -180,10 +200,10 @@ def load_local_split(dataset_root: str | Path, split: str) -> Dataset:
     columns = {
         "img": [row["image_path"] for row in rows],
         "label": [int(row["label"]) for row in rows],
-        "lesion_id": [row["lesion_id"] for row in rows],
-        "image_id": [row.get("image_id", "") for row in rows],
-        "source": [row.get("source", "unknown") for row in rows],
     }
+    for optional_column in ("lesion_id", "image_id", "source", "class_name"):
+        if optional_column in rows[0]:
+            columns[optional_column] = [row[optional_column] for row in rows]
     dataset = Dataset.from_dict(columns).cast_column("img", Image())
     _local_split_cache[cache_key] = dataset
     return dataset
@@ -318,7 +338,7 @@ def load_data(
     seed: int = 42,
     validation_ratio: float = 0.2,
 ):
-    """Load one reproducible CIFAR-10 or HAM10000 client partition."""
+    """Load one reproducible client partition from any supported dataset."""
     if not 0 < validation_ratio < 1:
         raise ValueError("validation_ratio must be between zero and one")
 
