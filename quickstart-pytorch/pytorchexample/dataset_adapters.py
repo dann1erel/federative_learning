@@ -1,4 +1,4 @@
-"""Normalize alternative imbalanced image datasets into local manifest rows."""
+"""Normalize candidate imbalanced image datasets into local manifest rows."""
 
 from __future__ import annotations
 

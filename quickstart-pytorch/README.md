@@ -15,16 +15,16 @@ partition. The default is the moderately non-IID `dirichlet-alpha=0.5` scenario.
 The official test split stays centralized. See [DATASET.md](DATASET.md) for the
 selection rationale, limitations, and experiment protocol.
 
-The second supported dataset is naturally imbalanced HAM10000 from Kaggle. Its
+The naturally imbalanced experiments use HAM10000 from Kaggle. Its
 seven classes have a majority/minority ratio of about 58:1. The pipeline keeps
 all images of one `lesion_id` together, supports a four-source natural
 federation, and optionally uses globally balanced cross-entropy weights. See
 [HAM10000.md](HAM10000.md).
 
-Five naturally imbalanced alternatives were also screened using a transparent
-weighted rubric. HAM10000, FER2013, and Cassava 2020 received executable
-adapters/smoke tests; the scientific comparison and final selection rationale
-are in [DATASET_COMPARISON.md](DATASET_COMPARISON.md).
+Six naturally imbalanced datasets were evaluated using a transparent weighted
+rubric. HAM10000, FER2013, and Cassava 2020 have executable adapters and smoke
+tests; the scientific comparison and selection rationale are in
+[DATASET_COMPARISON.md](DATASET_COMPARISON.md).
 
 Download/cache the dataset and generate sample images, per-client class tables,
 and distribution heatmaps:
@@ -39,7 +39,7 @@ Prepare HAM10000 (approximately 3.2 GB in the Kaggle cache):
 python scripts/prepare_ham10000.py
 ```
 
-Prepare the lightweight FER2013 alternative (about 60 MB):
+Prepare the lightweight FER2013 candidate (about 60 MB):
 
 ```bash
 python scripts/prepare_candidate_dataset.py --dataset fer2013

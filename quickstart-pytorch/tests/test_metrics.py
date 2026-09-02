@@ -112,7 +112,7 @@ class PartitionerTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "supported datasets"):
             resolve_dataset_id("cifar100")
 
-    def test_alternative_dataset_specs_match_manifest_labels(self):
+    def test_candidate_dataset_specs_match_manifest_labels(self):
         fer2013 = get_dataset_spec("fer-2013")
         cassava = get_dataset_spec("cassava-2020")
 

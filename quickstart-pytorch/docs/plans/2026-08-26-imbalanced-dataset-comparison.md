@@ -2,7 +2,7 @@
 
 > **For Codex:** Execute this plan task by task. Use test-driven development for every code change and run the full verification suite before reporting completion.
 
-**Goal:** Compare several naturally imbalanced image-classification datasets, technically validate three representative finalists, and document a reproducible rationale for retaining or replacing HAM10000 in the master's thesis experiments.
+**Goal:** Compare several naturally imbalanced image-classification datasets, technically validate three representative candidates, and document a reproducible rationale for selecting the dataset used in the master's thesis experiments.
 
 **Architecture:** Keep literature-based screening separate from executable dataset preparation. A small adapter module will normalize FER2013 and Cassava Leaf Disease 2020 into the same local CSV-manifest boundary already used by HAM10000; the Flower data pipeline will consume those manifests without committing raw images. Scientific comparison and weighted scoring will be documented in a standalone Markdown report backed by primary-source citations and observed smoke-test results.
 
@@ -19,7 +19,7 @@
 1. Verify official or primary sources for HAM10000, ISIC 2019, APTOS 2019, FER2013, Chest X-Ray Pneumonia, and Cassava Leaf Disease 2020.
 2. Record dataset size, class counts, imbalance ratio, image format, subject/group metadata, source/domain metadata, split limitations, access conditions, and license.
 3. Score every candidate from 0 to 5 under the approved weighted rubric. Explain each non-obvious score and distinguish published facts from project-specific judgments.
-4. Select HAM10000 plus two representative alternatives for executable smoke testing. Do not treat ISIC 2019 as an independent replication dataset if its training data overlap HAM10000.
+4. Select three representative candidates for executable smoke testing. Do not treat ISIC 2019 as an independent replication dataset if its training data overlap HAM10000.
 
 ## Task 2: Specify normalized candidate manifests with failing tests
 
@@ -34,7 +34,7 @@
 5. Confirm the expected failure, implement the minimal Cassava adapter, and rerun the focused tests.
 6. Add validation tests for missing files, unknown classes/labels, and non-overlapping split image IDs; implement only the validation needed to pass them.
 
-## Task 3: Add one preparation CLI for the two alternatives
+## Task 3: Implement one preparation CLI for two candidates
 
 **Files:**
 - Create: `scripts/prepare_candidate_dataset.py`
@@ -67,7 +67,7 @@
 - Modify: `DATASET_COMPARISON.md`
 - Modify: `dataset_examples/dataset_candidate_scores.csv`
 
-1. Reuse the already prepared HAM10000 manifests and confirm class totals, RGB batch loading, grouped split integrity, and model output shape.
+1. Use the HAM10000 manifests to confirm class totals, RGB batch loading, grouped split integrity, and model output shape.
 2. Download and prepare FER2013 if Kaggle access succeeds; otherwise run the same adapter against the controlled fixture and clearly label that result as a structural smoke test.
 3. Validate Cassava through the controlled fixture and Kaggle metadata/API accessibility without forcing a multi-gigabyte download; document this limitation explicitly.
 4. Record the exact commands, observed results, and whether each check used full data or a fixture.
