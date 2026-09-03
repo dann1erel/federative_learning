@@ -135,14 +135,16 @@ def _plot_learning_curves(experiment_dir: Path, class_names: tuple[str, ...]) ->
 def _plot_client_dispersion(experiment_dir: Path, class_names: tuple[str, ...]) -> None:
     path = experiment_dir / "client_metrics.csv"
     if not path.is_file():
-        return
+        raise ValueError("No client metrics")
     rows = _read_csv(path)
     evaluate_rows = [row for row in rows if row.get("phase") == "evaluate"]
     if not evaluate_rows:
-        return
+        raise ValueError("No client evaluation metrics")
     rounds = sorted({_as_int(row, "round") for row in evaluate_rows})
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), layout="constrained")
-    for axis, metric, color in zip(axes, ("accuracy", "f1_macro"), _COLORS, strict=True):
+    for axis, metric, color in zip(
+        axes, ("accuracy", "f1_macro"), _COLORS[:2], strict=True
+    ):
         values = [
             [_as_float(row, metric) for row in evaluate_rows if _as_int(row, "round") == server_round]
             for server_round in rounds
@@ -231,10 +233,10 @@ def _plot_final_confusion(experiment_dir: Path, class_names: tuple[str, ...]) ->
 def _plot_client_class_distribution(experiment_dir: Path, class_names: tuple[str, ...]) -> None:
     client_metrics_path = experiment_dir / "client_metrics.csv"
     if not client_metrics_path.is_file():
-        return
+        raise ValueError("No client metrics")
     client_rows = _read_csv(client_metrics_path)
     if not client_rows:
-        return
+        raise ValueError("No client metrics")
     final_round = max(_as_int(row, "round") for row in client_rows)
     client_ids = sorted(
         {_as_int(row, "client_id") for row in client_rows if _as_int(row, "round") == final_round}
@@ -275,10 +277,14 @@ def generate_artifacts(experiment_dir: str | Path, class_names: Sequence[str]) -
         _plot_client_class_distribution,
     )
     for generator in generators:
+        open_figures = set(plt.get_fignums())
         try:
             generator(Path(experiment_dir), tuple(class_names))
         except Exception as exc:  # Rendering is a non-fatal artifact boundary
             warnings.append(f"{generator.__name__}: {exc}")
+        finally:
+            for figure_number in set(plt.get_fignums()) - open_figures:
+                plt.close(figure_number)
     return warnings
 
 
