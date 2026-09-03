@@ -73,4 +73,9 @@ def initialize_experiment(
 ) -> None:
     path = Path(experiment_dir)
     path.mkdir(parents=True, exist_ok=True)
-    atomic_write_json(path / "experiment.json", {"schema_version": SCHEMA_VERSION, **metadata})
+    manifest_path = path / "experiment.json"
+    if manifest_path.exists():
+        raise FileExistsError(f"Experiment manifest already exists: {manifest_path}")
+    atomic_write_json(
+        manifest_path, {"schema_version": SCHEMA_VERSION, **metadata}
+    )

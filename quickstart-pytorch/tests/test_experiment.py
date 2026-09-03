@@ -44,6 +44,26 @@ class ExperimentLifecycleTests(unittest.TestCase):
             )
             self.assertFalse((experiment_dir / "experiment.json.tmp").exists())
 
+    def test_initialize_experiment_rejects_existing_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            experiment_dir = Path(directory)
+
+            initialize_experiment(experiment_dir, {"status": "running", "seed": 42})
+            original_manifest = json.loads(
+                (experiment_dir / "experiment.json").read_text(encoding="utf-8")
+            )
+
+            with self.assertRaises(FileExistsError):
+                initialize_experiment(
+                    experiment_dir, {"status": "completed", "seed": 99}
+                )
+
+            self.assertEqual(
+                json.loads((experiment_dir / "experiment.json").read_text(encoding="utf-8")),
+                original_manifest,
+            )
+            self.assertFalse((experiment_dir / "experiment.json.tmp").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
