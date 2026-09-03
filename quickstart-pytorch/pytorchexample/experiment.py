@@ -374,3 +374,24 @@ class ExperimentRecorder:
             os.fsync(handle.fileno())
 
         os.replace(temporary, target)
+
+    def finalize(self) -> list[str]:
+        from pytorchexample.experiment_plots import generate_artifacts, write_summary
+
+        warnings = generate_artifacts(self.experiment_dir, self.class_names)
+        update_manifest(
+            self.experiment_dir,
+            {
+                "status": "completed_with_warnings" if warnings else "completed",
+                "warnings": warnings,
+            },
+        )
+        try:
+            write_summary(self.experiment_dir, self.class_names)
+        except Exception as exc:  # Preserve trustworthy raw metrics on report failure
+            warnings.append(f"write_summary: {exc}")
+            update_manifest(
+                self.experiment_dir,
+                {"status": "completed_with_warnings", "warnings": warnings},
+            )
+        return warnings
