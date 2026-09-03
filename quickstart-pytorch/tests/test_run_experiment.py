@@ -109,6 +109,31 @@ class RunnerConfigurationTests(unittest.TestCase):
         self.assertIn("save-model=true", run_config)
         self.assertEqual(command[-2:], ["--federation-config", "num-supernodes=4"])
 
+    def test_build_command_preserves_relative_project_root_in_argv(self):
+        project_root = Path("relative/project")
+
+        command = build_flwr_command(
+            project_root,
+            {
+                "dataset": "ham10000",
+                "dataset-root": "data/ham10000",
+                "experiment-dir": "results/run-1",
+            },
+            2,
+        )
+
+        self.assertEqual(command[:4], ["flwr", "run", "relative/project", "--stream"])
+        run_config = command[command.index("--run-config") + 1]
+        absolute_root = (Path.cwd() / project_root).resolve()
+        self.assertIn(
+            f'dataset-root="{absolute_root / "data/ham10000"}"',
+            run_config,
+        )
+        self.assertIn(
+            f'experiment-dir="{absolute_root / "results/run-1"}"',
+            run_config,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

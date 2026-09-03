@@ -78,7 +78,8 @@ def build_flwr_command(
     project_root: Path, app_config: Mapping[str, Scalar], num_clients: int
 ) -> list[str]:
     validated_config = _validated_flat_mapping(app_config, source="app config")
-    project_path = _absolute_path(project_root)
+    project_path = Path(project_root)
+    project_base = _absolute_path(project_path)
 
     experiment_dir = validated_config.get("experiment-dir")
     if not isinstance(experiment_dir, str) or not experiment_dir:
@@ -86,10 +87,10 @@ def build_flwr_command(
 
     normalized_config = dict(validated_config)
     normalized_config["dataset-root"] = _resolve_local_path(
-        project_path, validated_config["dataset-root"], "dataset-root"
+        project_base, validated_config["dataset-root"], "dataset-root"
     )
     normalized_config["experiment-dir"] = _resolve_local_path(
-        project_path, experiment_dir, "experiment-dir"
+        project_base, experiment_dir, "experiment-dir"
     )
 
     serialized_tokens = [
