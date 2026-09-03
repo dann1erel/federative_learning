@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download CIFAR-10 and create reproducible non-IID partition examples."""
+"""Загружает CIFAR-10 и создаёт воспроизводимые примеры non-IID-разбиений."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def validate_args(args: argparse.Namespace) -> None:
 
 
 def save_sample_grid(dataset, output_path: Path, samples_per_class: int, seed: int):
-    """Save a deterministic grid with examples from every class."""
+    """Сохраняет детерминированную сетку с примерами каждого класса."""
     samples: dict[int, list[Image.Image]] = {
         class_id: [] for class_id in range(len(CLASS_NAMES))
     }
@@ -98,7 +98,7 @@ def save_sample_grid(dataset, output_path: Path, samples_per_class: int, seed: i
 
 
 def normalized_label_entropy(class_counts: list[int]) -> float:
-    """Return label entropy in [0, 1], where 1 is a uniform class mix."""
+    """Возвращает энтропию меток в диапазоне [0, 1], где 1 означает равномерную смесь классов."""
     total = sum(class_counts)
     if total == 0:
         return 0.0
@@ -121,7 +121,7 @@ def save_distribution_csv(rows: list[dict], output_path: Path) -> None:
 
 
 def save_distribution_heatmap(rows: list[dict], output_path: Path, title: str) -> None:
-    """Render a dependency-light heatmap using Pillow."""
+    """Отрисовывает тепловую карту с минимумом зависимостей, используя Pillow."""
     cell_width, cell_height = 62, 38
     left_margin, top_margin, bottom_margin = 92, 58, 34
     width = left_margin + len(CLASS_NAMES) * cell_width
@@ -177,7 +177,7 @@ def partition_dataset(
     min_partition_size: int,
     seed: int,
 ) -> tuple[list[dict], dict]:
-    """Create a scenario and return per-client class counts and its summary."""
+    """Создаёт сценарий и возвращает числа объектов каждого класса по клиентам и сводку."""
     partitioner = create_partitioner(
         name=name,
         num_partitions=num_clients,
@@ -185,9 +185,9 @@ def partition_dataset(
         min_partition_size=min_partition_size,
         seed=seed,
     )
-    # FederatedDataset applies this deterministic shuffle before assigning its
-    # dataset to a partitioner. Mirroring it here lets all scenarios reuse one
-    # already downloaded Dataset object.
+    # FederatedDataset выполняет это детерминированное перемешивание перед
+    # передачей своего набора данных разделителю. Его повторение здесь позволяет всем
+    # сценариям повторно использовать один уже загруженный объект Dataset.
     partitioner.dataset = train_dataset.shuffle(seed=seed)
 
     rows = []

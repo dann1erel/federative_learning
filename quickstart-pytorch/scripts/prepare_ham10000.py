@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download and prepare the naturally imbalanced HAM10000 Kaggle dataset."""
+"""Загружает и подготавливает естественно несбалансированный набор данных HAM10000 с Kaggle."""
 
 from __future__ import annotations
 
@@ -119,7 +119,7 @@ def find_single_file(source: Path, filename: str) -> Path:
 
 
 def load_rows(source: Path) -> list[dict[str, str]]:
-    """Join Kaggle metadata with image paths and validate the published counts."""
+    """Объединяет метаданные Kaggle с путями к изображениям и проверяет опубликованные количества."""
     metadata_path = find_single_file(source, "HAM10000_metadata.csv")
     with metadata_path.open(newline="", encoding="utf-8") as file:
         rows = list(csv.DictReader(file))
@@ -157,7 +157,7 @@ def load_rows(source: Path) -> list[dict[str, str]]:
 def load_official_test_rows(
     source: Path,
 ) -> tuple[list[dict[str, str]], list[str]] | None:
-    """Load the labeled ISIC 2018 Task 3 test split when the mirror includes it."""
+    """Загружает размеченное тестовое разбиение ISIC 2018 Task 3, если оно есть в зеркале."""
     ground_truth_files = list(source.rglob("ISIC2018_Task3_Test_GroundTruth.csv"))
     if not ground_truth_files:
         return None
@@ -216,7 +216,7 @@ def lesion_grouped_stratified_split(
     test_ratio: float,
     seed: int,
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
-    """Approximate a stratified holdout while keeping each lesion intact."""
+    """Приближённо формирует стратифицированную отложенную выборку, сохраняя каждое поражение целиком."""
     groups_by_class: dict[str, dict[str, list[dict[str, str]]]] = defaultdict(
         lambda: defaultdict(list)
     )

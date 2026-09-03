@@ -1,4 +1,4 @@
-"""pytorchexample: A Flower / PyTorch app."""
+"""pytorchexample: приложение Flower / PyTorch."""
 
 import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
@@ -14,15 +14,15 @@ from pytorchexample.task import (
 from pytorchexample.task import test as test_fn
 from pytorchexample.task import train as train_fn
 
-# Flower ClientApp
+# Клиентское приложение Flower (ClientApp)
 app = ClientApp()
 
 
 @app.train()
 def train(msg: Message, context: Context):
-    """Train the model on local data."""
+    """Обучает модель на локальных данных."""
 
-    # Load the model and initialize it with the received weights
+    # Загружаем модель и инициализируем её полученными весами
     dataset_name = str(context.run_config["dataset"])
     dataset_root = str(context.run_config["dataset-root"])
     dataset_spec = get_dataset_spec(dataset_name)
@@ -31,7 +31,7 @@ def train(msg: Message, context: Context):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # Load the data
+    # Загружаем данные
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
@@ -50,7 +50,7 @@ def train(msg: Message, context: Context):
         validation_ratio=float(context.run_config["validation-ratio"]),
     )
 
-    # Call the training function
+    # Вызываем функцию обучения
     train_loss = train_fn(
         model,
         trainloader,
@@ -64,7 +64,7 @@ def train(msg: Message, context: Context):
         ),
     )
 
-    # Construct and return reply Message
+    # Формируем и возвращаем ответное сообщение Message
     model_record = ArrayRecord(model.state_dict())
     metrics = {
         "train_loss": train_loss,
@@ -77,9 +77,9 @@ def train(msg: Message, context: Context):
 
 @app.evaluate()
 def evaluate(msg: Message, context: Context):
-    """Evaluate the model on local data."""
+    """Оценивает модель на локальных данных."""
 
-    # Load the model and initialize it with the received weights
+    # Загружаем модель и инициализируем её полученными весами
     dataset_name = str(context.run_config["dataset"])
     dataset_root = str(context.run_config["dataset-root"])
     dataset_spec = get_dataset_spec(dataset_name)
@@ -88,7 +88,7 @@ def evaluate(msg: Message, context: Context):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # Load the data
+    # Загружаем данные
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
@@ -107,7 +107,7 @@ def evaluate(msg: Message, context: Context):
         validation_ratio=float(context.run_config["validation-ratio"]),
     )
 
-    # Call the evaluation function
+    # Вызываем функцию оценки
     evaluation_metrics = test_fn(
         model,
         valloader,
@@ -115,7 +115,7 @@ def evaluate(msg: Message, context: Context):
         class_names=dataset_spec.class_names,
     )
 
-    # Construct and return reply Message
+    # Формируем и возвращаем ответное сообщение Message
     metrics = {
         **metrics_for_flower(evaluation_metrics),
         "num-examples": len(valloader.dataset),

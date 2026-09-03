@@ -1,4 +1,4 @@
-"""pytorchexample: A Flower / PyTorch app."""
+"""pytorchexample: приложение Flower / PyTorch."""
 
 from functools import partial
 
@@ -16,15 +16,15 @@ from pytorchexample.task import (
     test,
 )
 
-# Create ServerApp
+# Создаём ServerApp
 app = ServerApp()
 
 
 @app.main()
 def main(grid: Grid, context: Context) -> None:
-    """Main entry point for the ServerApp."""
+    """Основная точка входа для ServerApp."""
 
-    # Read run config
+    # Считываем конфигурацию запуска
     fraction_evaluate: float = context.run_config["fraction-evaluate"]
     num_rounds: int = context.run_config["num-server-rounds"]
     lr: float = context.run_config["learning-rate"]
@@ -32,11 +32,11 @@ def main(grid: Grid, context: Context) -> None:
     dataset_root = str(context.run_config["dataset-root"])
     dataset_spec = get_dataset_spec(dataset_name)
 
-    # Load global model
+    # Загружаем глобальную модель
     global_model = Net(num_classes=dataset_spec.num_classes)
     arrays = ArrayRecord(global_model.state_dict())
 
-    # Initialize FedAvg strategy
+    # Инициализируем стратегию FedAvg
     strategy = FedAvg(
         fraction_evaluate=fraction_evaluate,
         evaluate_metrics_aggr_fn=partial(
@@ -45,7 +45,7 @@ def main(grid: Grid, context: Context) -> None:
         ),
     )
 
-    # Start strategy, run FedAvg for `num_rounds`
+    # Запускаем стратегию и выполняем FedAvg в течение `num_rounds` раундов
     result = strategy.start(
         grid=grid,
         initial_arrays=arrays,
@@ -60,7 +60,7 @@ def main(grid: Grid, context: Context) -> None:
     )
 
     if context.run_config["save-model"]:
-        # Save final model to disk
+        # Сохраняем итоговую модель на диск
         print("\nSaving final model to disk...")
         state_dict = result.arrays.to_torch_state_dict()
         torch.save(state_dict, "final_model.pt")
@@ -71,7 +71,7 @@ def aggregate_evaluate_metrics(
     weighting_metric_name: str,
     class_names=tuple(),
 ) -> MetricRecord:
-    """Aggregate client confusion matrices before deriving global metrics."""
+    """Агрегирует матрицы ошибок клиентов перед вычислением глобальных метрик."""
     if not class_names:
         class_names = get_dataset_spec("cifar10").class_names
     matrix_size = len(class_names) ** 2
@@ -111,9 +111,9 @@ def global_evaluate(
     dataset_root: str = "data/ham10000",
     class_names=tuple(),
 ) -> MetricRecord:
-    """Evaluate model on central data."""
+    """Оценивает модель на централизованных данных."""
 
-    # Load the model and initialize it with the received weights
+    # Загружаем модель и инициализируем её полученными весами
     dataset_spec = get_dataset_spec(dataset_name)
     if not class_names:
         class_names = dataset_spec.class_names
@@ -122,13 +122,13 @@ def global_evaluate(
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # Load entire test set
+    # Загружаем весь тестовый набор
     test_dataloader = load_centralized_dataset(
         dataset_name=dataset_name,
         dataset_root=dataset_root,
     )
 
-    # Evaluate the global model on the test set
+    # Оцениваем глобальную модель на тестовом наборе
     metrics = test(model, test_dataloader, device, class_names=class_names)
 
     print(f"\nCentralized metrics after round {server_round}:")
@@ -158,5 +158,5 @@ def global_evaluate(
     for name, row in zip(class_names, metrics["confusion_matrix"], strict=True):
         print(f"  {name:<12} " + " ".join(f"{value:5d}" for value in row))
 
-    # Return the evaluation metrics
+    # Возвращаем метрики оценки
     return MetricRecord(metrics_for_flower(metrics))

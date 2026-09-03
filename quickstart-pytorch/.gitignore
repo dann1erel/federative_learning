@@ -1,26 +1,26 @@
-# Local Python environments
+# Локальные окружения Python
 venv/
 .venv/
 
-# Python-generated files
+# Файлы, созданные Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 
-# Build and test artifacts
+# Артефакты сборки и тестирования
 build/
 dist/
 *.fab
 .pytest_cache/
 
-# Downloaded datasets and generated local manifests
+# Загруженные наборы данных и созданные локальные манифесты
 data/
 
-# Candidate previews can contain copyrighted or personally identifiable source images.
+# Предварительные изображения кандидатов могут содержать защищённые авторским правом материалы или персональные данные.
 dataset_examples/fer2013/samples.png
 dataset_examples/cassava/samples.png
 
-# Local editor and OS metadata
+# Локальные метаданные редактора и операционной системы
 .DS_Store
 .idea/
 .vscode/

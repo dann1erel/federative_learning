@@ -1,4 +1,4 @@
-"""pytorchexample: A Flower / PyTorch app."""
+"""pytorchexample: приложение Flower / PyTorch."""
 
 import csv
 import random
@@ -43,7 +43,7 @@ HAM10000_CLASS_NAMES = ("akiec", "bcc", "bkl", "df", "mel", "nv", "vasc")
 
 @dataclass(frozen=True)
 class DatasetSpec:
-    """Static properties needed by the model and data pipeline."""
+    """Статические свойства, необходимые модели и конвейеру данных."""
 
     name: str
     class_names: tuple[str, ...]
@@ -97,13 +97,14 @@ DATASET_ALIASES = {
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET_ID = DATASET_SPECS["cifar10"].dataset_id
 
-# Backwards-compatible CIFAR-10 defaults for metric helpers and existing imports.
+# Значения CIFAR-10 по умолчанию для обратной совместимости с вспомогательными
+# функциями метрик и существующими импортами.
 CLASS_NAMES = list(CIFAR10_CLASS_NAMES)
 NUM_CLASSES = len(CLASS_NAMES)
 
 
 class Net(nn.Module):
-    """Small CNN supporting both 32x32 CIFAR-10 and resized HAM10000 images."""
+    """Небольшая CNN, поддерживающая CIFAR-10 32x32 и изображения HAM10000 с изменённым размером."""
 
     def __init__(self, num_classes: int = NUM_CLASSES):
         super(Net, self).__init__()
@@ -126,15 +127,16 @@ class Net(nn.Module):
         return self.fc3(x)
 
 
-# A client process can request its train and validation loaders separately. Cache one
-# partition source per configuration so both requests reuse the same deterministic split.
+# Процесс клиента может отдельно запрашивать загрузчики обучающей и валидационной
+# выборок. Кэшируем один источник разделов на конфигурацию, чтобы оба запроса
+# использовали одно и то же детерминированное разделение.
 _partition_source_cache: dict[tuple, object] = {}
 _local_split_cache: dict[tuple[str, str], Dataset] = {}
 
 
 @lru_cache(maxsize=None)
 def image_transforms(image_size: int):
-    """Create deterministic preprocessing for one dataset image size."""
+    """Создаёт детерминированную предобработку для одного размера изображения набора данных."""
     return Compose(
         [
             Resize((image_size, image_size)),
@@ -145,14 +147,14 @@ def image_transforms(image_size: int):
 
 
 def apply_transforms(batch, image_size: int = 32):
-    """Apply transforms to the partition from FederatedDataset."""
+    """Применяет преобразования к разделу из FederatedDataset."""
     transform = image_transforms(image_size)
     batch["img"] = [transform(img.convert("RGB")) for img in batch["img"]]
     return batch
 
 
 def get_dataset_spec(dataset_name: str) -> DatasetSpec:
-    """Return a dataset specification from a canonical name or supported alias."""
+    """Возвращает спецификацию набора данных по каноническому имени или поддерживаемому псевдониму."""
     normalized_name = dataset_name.strip().lower()
     canonical_name = DATASET_ALIASES.get(normalized_name, normalized_name)
     if canonical_name not in DATASET_SPECS:
@@ -164,7 +166,7 @@ def get_dataset_spec(dataset_name: str) -> DatasetSpec:
 
 
 def resolve_dataset_id(dataset_name: str) -> str:
-    """Resolve a remotely hosted dataset to its Hugging Face identifier."""
+    """Определяет идентификатор Hugging Face для удалённо размещённого набора данных."""
     spec = get_dataset_spec(dataset_name)
     if spec.dataset_id is None:
         raise ValueError(f"Dataset {spec.name!r} is prepared from a local manifest")
@@ -172,13 +174,13 @@ def resolve_dataset_id(dataset_name: str) -> str:
 
 
 def resolve_dataset_root(dataset_root: str | Path) -> Path:
-    """Resolve a configured data directory relative to the Flower project."""
+    """Определяет настроенный каталог данных относительно проекта Flower."""
     root = Path(dataset_root).expanduser()
     return root if root.is_absolute() else PROJECT_ROOT / root
 
 
 def load_local_split(dataset_root: str | Path, split: str) -> Dataset:
-    """Load an image dataset split from a normalized preparation manifest."""
+    """Загружает раздел набора изображений из нормализованного манифеста подготовки."""
     root = resolve_dataset_root(dataset_root)
     cache_key = (str(root.resolve()), split)
     if cache_key in _local_split_cache:
@@ -210,7 +212,7 @@ def load_local_split(dataset_root: str | Path, split: str) -> Dataset:
 
 
 class GroupedPartitionSource:
-    """Keep all images sharing a group (a HAM10000 lesion) on one client."""
+    """Хранит все изображения одной группы (одного поражения HAM10000) на одном клиенте."""
 
     def __init__(self, dataset, partitioner, group_column: str, seed: int):
         self.dataset = dataset
@@ -242,9 +244,9 @@ class GroupedPartitionSource:
                 group_to_source_counts.setdefault(normalized_group, Counter()).update(
                     [normalized_source]
                 )
-            # Nine HAM10000 lesions have images attributed to two source
-            # collections. Assign the complete lesion to its majority source; use
-            # lexical order as a deterministic tie-breaker.
+            # Девять поражений HAM10000 имеют изображения, отнесённые к двум
+            # исходным коллекциям. Относим всё поражение к источнику большинства;
+            # при равенстве используем лексикографический порядок.
             group_to_source = {
                 group_id: sorted(
                     counts,
@@ -275,7 +277,7 @@ def grouped_train_test_split(
     test_size: float,
     seed: int,
 ) -> dict[str, Dataset]:
-    """Split a client partition without putting one lesion in both subsets."""
+    """Разделяет выборку клиента, не помещая одно поражение в оба подмножества."""
     groups = sorted(set(str(value) for value in dataset[group_column]))
     if len(groups) < 2:
         raise ValueError("A grouped train/validation split needs at least two groups")
@@ -299,7 +301,7 @@ def create_partitioner(
     min_partition_size: int = 50,
     seed: int = 42,
 ):
-    """Create a reproducible IID, Dirichlet, or natural-source partitioner."""
+    """Создаёт воспроизводимое IID-разбиение, разбиение Дирихле или по естественным источникам."""
     normalized_name = name.strip().lower()
     if normalized_name == "iid":
         return IidPartitioner(num_partitions=num_partitions)
@@ -315,8 +317,9 @@ def create_partitioner(
             partition_by="label",
             alpha=dirichlet_alpha,
             min_partition_size=min_partition_size,
-            # Keep this disabled so the experiment can expose quantity skew as well
-            # as label skew. Per-client sample counts are saved by the prep script.
+            # Оставляем отключённым, чтобы эксперимент мог выявить перекос как по
+            # количеству данных, так и по меткам. Скрипт подготовки сохраняет
+            # число примеров для каждого клиента.
             self_balancing=False,
             shuffle=True,
             seed=seed,
@@ -338,7 +341,7 @@ def load_data(
     seed: int = 42,
     validation_ratio: float = 0.2,
 ):
-    """Load one reproducible client partition from any supported dataset."""
+    """Загружает один воспроизводимый раздел клиента из любого поддерживаемого набора данных."""
     if not 0 < validation_ratio < 1:
         raise ValueError("validation_ratio must be between zero and one")
 
@@ -395,8 +398,8 @@ def load_data(
         _partition_source_cache[cache_key] = source
 
     partition = _partition_source_cache[cache_key].load_partition(partition_id)
-    # Keep the official test split centralized; only the client's train partition
-    # is split into local train and validation subsets.
+    # Официальный тестовый раздел остаётся централизованным; только обучающий
+    # раздел клиента делится на локальные обучающее и валидационное подмножества.
     if spec.group_column:
         partition_train_test = grouped_train_test_split(
             dataset=partition,
@@ -409,7 +412,7 @@ def load_data(
             test_size=validation_ratio,
             seed=seed,
         )
-    # Construct dataloaders
+    # Создаём загрузчики данных
     transform = partial(apply_transforms, image_size=spec.image_size)
     transformed_train = partition_train_test["train"].with_transform(transform)
     transformed_test = partition_train_test["test"].with_transform(transform)
@@ -427,7 +430,7 @@ def load_centralized_dataset(
     dataset_name: str = "cifar10",
     dataset_root: str | Path = "data/ham10000",
 ):
-    """Load test set and return dataloader."""
+    """Загружает тестовый набор и возвращает загрузчик данных."""
     spec = get_dataset_spec(dataset_name)
     if spec.dataset_id is not None:
         test_dataset = load_dataset(spec.dataset_id, split="test")
@@ -439,7 +442,7 @@ def load_centralized_dataset(
 
 
 def balanced_class_weights(class_counts) -> torch.Tensor:
-    """Compute N/(K*n_c) weights used by balanced cross-entropy."""
+    """Вычисляет веса N/(K*n_c), используемые в сбалансированной перекрёстной энтропии."""
     counts = torch.as_tensor(class_counts, dtype=torch.float64)
     if counts.ndim != 1 or len(counts) < 2 or torch.any(counts <= 0):
         raise ValueError("class_counts must contain at least two positive counts")
@@ -451,7 +454,7 @@ def get_class_weights(
     dataset_root: str | Path = "data/ham10000",
     mode: str = "none",
 ) -> torch.Tensor | None:
-    """Return optional global class weights without using client-local prevalence."""
+    """Возвращает необязательные глобальные веса классов без использования локальных частот клиентов."""
     normalized_mode = mode.strip().lower()
     if normalized_mode == "none":
         return None
@@ -469,8 +472,8 @@ def get_class_weights(
 
 
 def train(net, trainloader, epochs, lr, device, class_weights=None):
-    """Train the model on the training set."""
-    net.to(device)  # move model to GPU if available
+    """Обучает модель на обучающем наборе."""
+    net.to(device)  # перемещаем модель на GPU, если он доступен
     weights = class_weights.to(device) if class_weights is not None else None
     criterion = torch.nn.CrossEntropyLoss(weight=weights).to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
@@ -490,7 +493,7 @@ def train(net, trainloader, epochs, lr, device, class_weights=None):
 
 
 def metrics_from_confusion_matrix(confusion_matrix, class_names=None):
-    """Calculate multiclass metrics from an actual-by-predicted matrix."""
+    """Вычисляет многоклассовые метрики по матрице «фактический класс × предсказанный класс»."""
     matrix = torch.as_tensor(confusion_matrix, dtype=torch.float64)
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError("confusion_matrix must be a square matrix")
@@ -527,7 +530,7 @@ def metrics_from_confusion_matrix(confusion_matrix, class_names=None):
     ]
     return {
         "accuracy": float(accuracy.item()),
-        # For multiclass classification, balanced accuracy is macro recall.
+        # Для многоклассовой классификации сбалансированная точность — это макроусреднённая полнота.
         "balanced_accuracy": float(recall.mean().item()),
         "precision_macro": float(precision.mean().item()),
         "recall_macro": float(recall.mean().item()),
@@ -541,7 +544,7 @@ def metrics_from_confusion_matrix(confusion_matrix, class_names=None):
 
 
 def metrics_for_flower(metrics):
-    """Flatten structured evaluation metrics into Flower-supported values."""
+    """Преобразует структурированные метрики оценки в значения, поддерживаемые Flower."""
     per_class = metrics["per_class_metrics"]
     return {
         "loss": metrics["loss"],
@@ -557,7 +560,7 @@ def metrics_for_flower(metrics):
         "per_class_recall": [item["recall"] for item in per_class],
         "per_class_f1": [item["f1"] for item in per_class],
         "per_class_support": [item["support"] for item in per_class],
-        # MetricRecord accepts one-dimensional scalar lists.
+        # MetricRecord принимает одномерные списки скалярных значений.
         "confusion_matrix": [
             value for row in metrics["confusion_matrix"] for value in row
         ],
@@ -565,7 +568,7 @@ def metrics_for_flower(metrics):
 
 
 def test(net, testloader, device, class_names=None):
-    """Evaluate a model and return all classification metrics."""
+    """Оценивает модель и возвращает все метрики классификации."""
     net.to(device)
     net.eval()
     criterion = torch.nn.CrossEntropyLoss(reduction="sum")

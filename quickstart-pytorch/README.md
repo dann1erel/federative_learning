@@ -4,56 +4,56 @@ dataset: [CIFAR-10, HAM10000, FER2013, Cassava Leaf Disease 2020]
 framework: [torch, torchvision]
 ---
 
-# Federated Learning with PyTorch and Flower (Quickstart Example)
+# Федеративное обучение с PyTorch и Flower (пример быстрого старта)
 
-This introductory example to Flower uses PyTorch, but deep knowledge of PyTorch is not necessarily required to run the example. However, it will help you understand how to adapt Flower to your use case. Running this example in itself is quite easy. This example uses [Flower Datasets](https://flower.ai/docs/datasets/) to download, partition and preprocess the CIFAR-10 dataset.
+В этом вводном примере для Flower используется PyTorch, однако для его запуска не обязательно глубоко знать PyTorch. Тем не менее, это поможет понять, как адаптировать Flower для вашего сценария использования. Сам по себе запуск этого примера довольно прост. В нём применяются [Flower Datasets](https://flower.ai/docs/datasets/) для загрузки, разбиения и предварительной обработки набора данных CIFAR-10.
 
-## Dataset and non-IID scenarios
+## Набор данных и non-IID-сценарии
 
-The experiment uses CIFAR-10 with a configurable IID or label-based Dirichlet
-partition. The default is the moderately non-IID `dirichlet-alpha=0.5` scenario.
-The official test split stays centralized. See [DATASET.md](DATASET.md) for the
-selection rationale, limitations, and experiment protocol.
+В эксперименте используется CIFAR-10 с настраиваемым IID-разбиением или
+разбиением Дирихле по меткам. По умолчанию выбран умеренно неоднородный non-IID-сценарий
+`dirichlet-alpha=0.5`. Официальная тестовая выборка остаётся централизованной.
+Обоснование выбора, ограничения и протокол эксперимента приведены в [DATASET.md](DATASET.md).
 
-The naturally imbalanced experiments use HAM10000 from Kaggle. Its
-seven classes have a majority/minority ratio of about 58:1. The pipeline keeps
-all images of one `lesion_id` together, supports a four-source natural
-federation, and optionally uses globally balanced cross-entropy weights. See
-[HAM10000.md](HAM10000.md).
+В экспериментах с естественным дисбалансом используется HAM10000 из Kaggle. Для его
+семи классов соотношение большинства к меньшинству составляет примерно 58:1. Конвейер
+хранит все изображения с одним `lesion_id` вместе, поддерживает естественную федерацию
+из четырёх источников и при необходимости использует глобально сбалансированные веса
+перекрёстной энтропии. См. [HAM10000.md](HAM10000.md).
 
-Six naturally imbalanced datasets were evaluated using a transparent weighted
-rubric. HAM10000, FER2013, and Cassava 2020 have executable adapters and smoke
-tests; the scientific comparison and selection rationale are in
+Шесть наборов данных с естественным дисбалансом были оценены по прозрачной взвешенной
+рубрике. Для HAM10000, FER2013 и Cassava 2020 имеются исполняемые адаптеры и
+проверки работоспособности; научное сравнение и обоснование выбора приведены в
 [DATASET_COMPARISON.md](DATASET_COMPARISON.md).
 
-Download/cache the dataset and generate sample images, per-client class tables,
-and distribution heatmaps:
+Загрузите и закэшируйте набор данных, затем сгенерируйте примеры изображений, таблицы классов
+для каждого клиента и тепловые карты распределений:
 
 ```bash
 python scripts/prepare_cifar10.py
 ```
 
-Prepare HAM10000 (approximately 3.2 GB in the Kaggle cache):
+Подготовьте HAM10000 (примерно 3,2 ГБ в кэше Kaggle):
 
 ```bash
 python scripts/prepare_ham10000.py
 ```
 
-Prepare the lightweight FER2013 candidate (about 60 MB):
+Подготовьте лёгкий кандидат FER2013 (около 60 МБ):
 
 ```bash
 python scripts/prepare_candidate_dataset.py --dataset fer2013
 ```
 
-Prepare Cassava 2020 (about 6.19 GB; Kaggle authentication and accepted
-competition rules are required):
+Подготовьте Cassava 2020 (около 6,19 ГБ; требуются аутентификация в Kaggle и
+принятие правил соревнования):
 
 ```bash
 python scripts/prepare_candidate_dataset.py --dataset cassava
 ```
 
-The same command accepts `--source-dir` for an existing local download. Example
-Flower overrides are stored in `configs/fer2013_dirichlet.toml` and
+Та же команда принимает `--source-dir` для уже существующей локальной загрузки.
+Примеры переопределений Flower хранятся в `configs/fer2013_dirichlet.toml` и
 `configs/cassava_dirichlet.toml`.
 
 ```bash
@@ -61,68 +61,68 @@ flwr run . --run-config configs/fer2013_dirichlet.toml --stream
 flwr run . --run-config configs/cassava_dirichlet.toml --stream
 ```
 
-## Set up the project
+## Настройка проекта
 
-### Fetch the app
+### Получение приложения
 
-Install Flower:
+Установите Flower:
 
 ```shell
 pip install flwr
 ```
 
-Fetch the app:
+Получите приложение:
 
 ```shell
 flwr new @flwrlabs/quickstart-pytorch
 ```
 
-This will create a new directory called `quickstart-pytorch` with the following structure:
+Будет создан новый каталог `quickstart-pytorch` со следующей структурой:
 
 ```shell
 quickstart-pytorch
 ├── pytorchexample
 │   ├── __init__.py
-│   ├── client_app.py   # Defines your ClientApp
-│   ├── server_app.py   # Defines your ServerApp
-│   └── task.py         # Defines your model, training and data loading
-├── pyproject.toml      # Project metadata like dependencies and configs
+│   ├── client_app.py   # Определяет ваш ClientApp
+│   ├── server_app.py   # Определяет ваш ServerApp
+│   └── task.py         # Определяет модель, обучение и загрузку данных
+├── pyproject.toml      # Метаданные проекта: зависимости и конфигурации
 └── README.md
 ```
 
-### Install dependencies and project
+### Установка зависимостей и проекта
 
-Install the dependencies defined in `pyproject.toml` as well as the `pytorchexample` package.
+Установите зависимости из `pyproject.toml`, а также пакет `pytorchexample`.
 
 ```bash
 pip install -e .
 ```
 
-## Run the project
+## Запуск проекта
 
-You can run your Flower project in both _simulation_ and _deployment_ mode without making changes to the code. If you are starting with Flower, we recommend you using the _simulation_ mode as it requires fewer components to be launched manually. By default, `flwr run` will make use of the Simulation Engine.
+Проект Flower можно запускать как в режиме _симуляции_, так и в режиме _развёртывания_, не изменяя код. Если вы только начинаете работать с Flower, рекомендуем режим симуляции, поскольку в нём нужно вручную запускать меньше компонентов. По умолчанию `flwr run` использует Simulation Engine.
 
-### Run with the Simulation Engine
+### Запуск с Simulation Engine
 
 > [!TIP]
-> This example runs faster when the `ClientApp`s have access to a GPU. Check the [Simulation Engine documentation](https://flower.ai/docs/framework/how-to-run-simulations.html) to learn more about Flower simulations and how to optimize them.
+> Этот пример работает быстрее, когда у `ClientApp` есть доступ к GPU. Подробнее о симуляциях Flower и их оптимизации см. в [документации Simulation Engine](https://flower.ai/docs/framework/how-to-run-simulations.html).
 
 ```bash
-# Run with the default federation (CPU only)
+# Запуск с федерацией по умолчанию (только CPU)
 flwr run .  --stream
 ```
 
-You can also override some of the settings for your `ClientApp` and `ServerApp` defined in `pyproject.toml`. For example:
+Можно также переопределить некоторые настройки `ClientApp` и `ServerApp`, заданные в `pyproject.toml`. Например:
 
 ```bash
 flwr run . --run-config "num-server-rounds=5 learning-rate=0.05"  --stream
 ```
 
 > [!TIP]
-> For a more detailed walk-through check our [quickstart PyTorch tutorial](https://flower.ai/docs/framework/tutorial-quickstart-pytorch.html)
+> Более подробное руководство см. в нашем [учебнике по быстрому старту с PyTorch](https://flower.ai/docs/framework/tutorial-quickstart-pytorch.html).
 
-### Run with the Deployment Engine
+### Запуск с Deployment Engine
 
-Follow this [how-to guide](https://flower.ai/docs/framework/how-to-run-flower-with-deployment-engine.html) to run the same app in this example but with Flower's Deployment Engine. After that, you might be intersted in setting up [secure TLS-enabled communications](https://flower.ai/docs/framework/how-to-enable-tls-connections.html) and [SuperNode authentication](https://flower.ai/docs/framework/how-to-authenticate-supernodes.html) in your federation.
+Следуйте этому [практическому руководству](https://flower.ai/docs/framework/how-to-run-flower-with-deployment-engine.html), чтобы запустить то же приложение из этого примера с Deployment Engine Flower. Затем можно настроить в своей федерации [защищённую связь с TLS](https://flower.ai/docs/framework/how-to-enable-tls-connections.html) и [аутентификацию SuperNode](https://flower.ai/docs/framework/how-to-authenticate-supernodes.html).
 
-If you are already familiar with how the Deployment Engine works, you may want to learn how to run it using Docker. Check out the [Flower with Docker](https://flower.ai/docs/framework/docker/index.html) documentation.
+Если вы уже знакомы с работой Deployment Engine, возможно, вам будет полезно узнать, как запускать его с помощью Docker. См. документацию [Flower with Docker](https://flower.ai/docs/framework/docker/index.html).

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare FER2013 or Cassava 2020 as local manifests and audit artifacts."""
+"""Подготавливает FER2013 или Cassava 2020 как локальные манифесты и артефакты проверки."""
 
 from __future__ import annotations
 

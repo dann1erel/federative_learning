@@ -1,4 +1,4 @@
-"""Normalize candidate imbalanced image datasets into local manifest rows."""
+"""Нормализует рассматриваемые несбалансированные наборы изображений в строки локального манифеста."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def validate_fer2013_version_1_counts(
     train_rows: Iterable[Mapping[str, str]],
     test_rows: Iterable[Mapping[str, str]],
 ) -> None:
-    """Ensure an automatic download is the audited FER2013 Kaggle version 1."""
+    """Проверяет, что автоматически загруженный набор — проверенная версия 1 FER2013 из Kaggle."""
     actual = {
         "train": Counter(row["class_name"] for row in train_rows),
         "test": Counter(row["class_name"] for row in test_rows),
@@ -66,7 +66,7 @@ def validate_fer2013_version_1_counts(
 def prepare_fer2013(
     source_dir: str | Path,
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
-    """Read the folder-form FER2013 mirror while preserving its train/test split."""
+    """Считывает зеркальную копию FER2013 в виде папок, сохраняя обучающее и тестовое разбиения."""
     source = Path(source_dir).expanduser().resolve()
     split_rows: dict[str, list[dict[str, str]]] = {"train": [], "test": []}
     for split in split_rows:
@@ -103,7 +103,7 @@ def prepare_cassava(
     test_ratio: float = 0.2,
     seed: int = 42,
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
-    """Create a deterministic stratified holdout from Cassava train labels."""
+    """Создаёт детерминированную стратифицированную отложенную выборку из обучающих меток Cassava."""
     if not 0 < test_ratio < 1:
         raise ValueError("test_ratio must be between zero and one")
     source = Path(source_dir).expanduser().resolve()
