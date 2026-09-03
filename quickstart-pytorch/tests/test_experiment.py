@@ -1,10 +1,13 @@
 import json
 import tempfile
 import unittest
+from csv import DictReader
 from datetime import datetime, timezone
 from pathlib import Path
 
+from flwr.app import MetricRecord, RecordDict
 from pytorchexample.experiment import (
+    ExperimentRecorder,
     create_experiment_dir,
     initialize_experiment,
     slugify,
@@ -63,6 +66,96 @@ class ExperimentLifecycleTests(unittest.TestCase):
                 original_manifest,
             )
             self.assertFalse((experiment_dir / "experiment.json.tmp").exists())
+
+
+class ExperimentRecorderTests(unittest.TestCase):
+    def make_record(self, client_id, server_round, examples, accuracy):
+        return RecordDict(
+            {
+                "metrics": MetricRecord(
+                    {
+                        "client-id": client_id,
+                        "server-round": server_round,
+                        "num-examples": examples,
+                        "loss": 0.5,
+                        "accuracy": accuracy,
+                        "balanced_accuracy": accuracy,
+                        "precision_macro": accuracy,
+                        "recall_macro": accuracy,
+                        "f1_macro": accuracy,
+                        "precision_weighted": accuracy,
+                        "recall_weighted": accuracy,
+                        "f1_weighted": accuracy,
+                        "per_class_precision": [accuracy, 0.0],
+                        "per_class_recall": [accuracy, 0.0],
+                        "per_class_f1": [accuracy, 0.0],
+                        "per_class_support": [examples, 0],
+                        "confusion_matrix": [examples, 0, 0, 0],
+                    }
+                )
+            }
+        )
+
+    def test_record_clients_writes_scalar_per_class_and_matrix_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("majority", "minority"))
+
+            recorder.record_clients("evaluate", [self.make_record(3, 2, 8, 0.75)])
+
+            with open(Path(directory) / "client_metrics.csv", encoding="utf-8") as handle:
+                rows = list(DictReader(handle))
+
+            self.assertEqual(rows[0]["client_id"], "3")
+            self.assertEqual(rows[0]["round"], "2")
+            self.assertEqual(rows[0]["accuracy"], "0.75")
+
+            with open(
+                Path(directory) / "per_class_metrics.csv",
+                encoding="utf-8",
+            ) as handle:
+                per_class = list(DictReader(handle))
+
+            self.assertEqual(
+                [row["class_name"] for row in per_class],
+                ["majority", "minority"],
+            )
+
+            matrices = [
+                json.loads(line)
+                for line in (
+                    Path(directory) / "client_confusion_matrices.jsonl"
+                ).read_text(encoding="utf-8").splitlines()
+            ]
+            self.assertEqual(matrices[0]["matrix"], [[8, 0], [0, 0]])
+
+    def test_record_round_preserves_round_zero_and_writes_matrix_csv(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("a", "b"))
+
+            recorder.record_round(
+                0,
+                "centralized_test",
+                {
+                    "loss": 0.9,
+                    "accuracy": 0.5,
+                    "confusion_matrix": [2, 0, 2, 0],
+                    "per_class_precision": [0.5, 0.0],
+                    "per_class_recall": [1.0, 0.0],
+                    "per_class_f1": [2 / 3, 0.0],
+                    "per_class_support": [2, 2],
+                },
+            )
+
+            with open(Path(directory) / "round_metrics.csv", encoding="utf-8") as handle:
+                rows = list(DictReader(handle))
+
+            self.assertEqual(
+                (rows[0]["round"], rows[0]["source"]),
+                ("0", "centralized_test"),
+            )
+
+            matrix = Path(directory) / "confusion_matrices/centralized_round_000.csv"
+            self.assertTrue(matrix.is_file())
 
 
 if __name__ == "__main__":
