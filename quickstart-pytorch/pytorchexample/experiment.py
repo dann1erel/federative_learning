@@ -180,6 +180,7 @@ class ExperimentRecorder:
             {
                 "flower_run_id": run_id,
                 "series_id": series_id,
+                "effective_config": _json_compatible(dict(run_config)),
                 "run_config": _json_compatible(dict(run_config)),
             },
         )

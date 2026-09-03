@@ -354,6 +354,7 @@ def write_summary(experiment_dir: str | Path, class_names: Sequence[str]) -> Pat
         ("Per-class metrics", "per_class_metrics.csv"),
         ("Client confusion matrices", "client_confusion_matrices.jsonl"),
         ("Aggregate confusion matrices", "confusion_matrices/"),
+        ("Final model", "final_model.pt"),
     ):
         if (root / relative_path).exists():
             lines.append(f"- [{label}]({relative_path})")

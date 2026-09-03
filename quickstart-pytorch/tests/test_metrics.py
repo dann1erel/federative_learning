@@ -3,11 +3,11 @@ import math
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import torch
 from datasets import Dataset
-from flwr.app import ConfigRecord, MetricRecord, RecordDict
+from flwr.app import ArrayRecord, ConfigRecord, MetricRecord, RecordDict
 from flwr_datasets.partitioner import (
     DirichletPartitioner,
     IidPartitioner,
@@ -31,10 +31,46 @@ from pytorchexample.client_app import client_bookkeeping
 from pytorchexample.server_app import (
     aggregate_evaluate_metrics,
     aggregate_train_metrics,
+    global_evaluate,
 )
 
 
 class MetricsTest(unittest.TestCase):
+    def test_global_evaluate_records_returned_centralized_metrics(self):
+        metrics = {
+            "loss": 0.25,
+            "accuracy": 0.5,
+            "balanced_accuracy": 0.5,
+            "precision_macro": 0.5,
+            "recall_macro": 0.5,
+            "f1_macro": 0.5,
+            "precision_weighted": 0.5,
+            "recall_weighted": 0.5,
+            "f1_weighted": 0.5,
+            "per_class_metrics": [
+                {
+                    "class_id": class_id,
+                    "class_name": class_name,
+                    "support": 1,
+                    "precision": 0.5,
+                    "recall": 0.5,
+                    "f1": 0.5,
+                }
+                for class_id, class_name in enumerate(get_dataset_spec("cifar10").class_names)
+            ],
+            "confusion_matrix": [[1 if row == column else 0 for column in range(10)] for row in range(10)],
+        }
+        recorder = Mock()
+        arrays = ArrayRecord(Net().state_dict())
+
+        with (
+            patch("pytorchexample.server_app.load_centralized_dataset", return_value=[]),
+            patch("pytorchexample.server_app.test", return_value=metrics),
+        ):
+            result = global_evaluate(0, arrays, recorder=recorder)
+
+        recorder.record_round.assert_called_once_with(0, "centralized_test", result)
+
     def test_client_bookkeeping_reads_strategy_round_and_partition_id(self):
         msg = Mock(content=RecordDict({"config": ConfigRecord({"server-round": 4})}))
         context = Mock(node_config={"partition-id": 7})

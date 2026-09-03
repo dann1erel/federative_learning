@@ -4,15 +4,18 @@ import unittest
 from csv import DictReader
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import Mock
 
 from flwr.app import MetricRecord, RecordDict
 from pytorchexample.experiment import (
     ExperimentRecorder,
     create_experiment_dir,
     initialize_experiment,
+    read_json,
     slugify,
     update_manifest,
 )
+from pytorchexample.server_app import create_recorder
 
 
 class ExperimentLifecycleTests(unittest.TestCase):
@@ -69,6 +72,35 @@ class ExperimentLifecycleTests(unittest.TestCase):
 
 
 class ExperimentRecorderTests(unittest.TestCase):
+    def test_create_recorder_is_disabled_for_empty_directory(self):
+        context = Mock(
+            run_id=5,
+            series_id=9,
+            run_config={"experiment-dir": ""},
+        )
+
+        self.assertIsNone(create_recorder(context, ("a", "b")))
+
+    def test_create_recorder_sets_flower_context(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            initialize_experiment(root, {"status": "running"})
+            context = Mock(
+                run_id=5,
+                series_id=9,
+                run_config={"experiment-dir": directory, "dataset": "fixture"},
+            )
+
+            recorder = create_recorder(context, ("a", "b"))
+            manifest = read_json(root / "experiment.json")
+
+            self.assertEqual(
+                (manifest["flower_run_id"], manifest["series_id"]),
+                (5, 9),
+            )
+            self.assertEqual(manifest["effective_config"]["dataset"], "fixture")
+            self.assertIsNotNone(recorder)
+
     def make_record(self, client_id, server_round, examples, accuracy):
         return RecordDict(
             {

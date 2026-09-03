@@ -2,6 +2,8 @@
 
 from functools import partial
 from numbers import Number
+from pathlib import Path
+from typing import Sequence
 
 import torch
 from flwr.app import ArrayRecord, ConfigRecord, Context, MetricRecord, RecordDict
@@ -22,6 +24,19 @@ from pytorchexample.task import (
 app = ServerApp()
 
 
+def create_recorder(
+    context: Context, class_names: Sequence[str]
+) -> ExperimentRecorder | None:
+    """Create and identify an experiment recorder when recording is enabled."""
+    experiment_dir = str(context.run_config.get("experiment-dir", ""))
+    if not experiment_dir:
+        return None
+
+    recorder = ExperimentRecorder(experiment_dir, class_names)
+    recorder.set_context(context.run_id, context.series_id, context.run_config)
+    return recorder
+
+
 @app.main()
 def main(grid: Grid, context: Context) -> None:
     """Основная точка входа для ServerApp."""
@@ -33,6 +48,7 @@ def main(grid: Grid, context: Context) -> None:
     dataset_name = str(context.run_config["dataset"])
     dataset_root = str(context.run_config["dataset-root"])
     dataset_spec = get_dataset_spec(dataset_name)
+    recorder = create_recorder(context, dataset_spec.class_names)
 
     # Загружаем глобальную модель
     global_model = Net(num_classes=dataset_spec.num_classes)
@@ -41,9 +57,11 @@ def main(grid: Grid, context: Context) -> None:
     # Инициализируем стратегию FedAvg
     strategy = FedAvg(
         fraction_evaluate=fraction_evaluate,
+        train_metrics_aggr_fn=partial(aggregate_train_metrics, recorder=recorder),
         evaluate_metrics_aggr_fn=partial(
             aggregate_evaluate_metrics,
             class_names=dataset_spec.class_names,
+            recorder=recorder,
         ),
     )
 
@@ -58,6 +76,7 @@ def main(grid: Grid, context: Context) -> None:
             dataset_name=dataset_name,
             dataset_root=dataset_root,
             class_names=dataset_spec.class_names,
+            recorder=recorder,
         ),
     )
 
@@ -65,7 +84,15 @@ def main(grid: Grid, context: Context) -> None:
         # Сохраняем итоговую модель на диск
         print("\nSaving final model to disk...")
         state_dict = result.arrays.to_torch_state_dict()
-        torch.save(state_dict, "final_model.pt")
+        model_path = (
+            recorder.experiment_dir / "final_model.pt"
+            if recorder is not None
+            else Path("final_model.pt")
+        )
+        torch.save(state_dict, model_path)
+
+    if recorder:
+        recorder.finalize()
 
 
 def _callback_metrics_and_round(
@@ -163,6 +190,7 @@ def global_evaluate(
     dataset_name: str = "cifar10",
     dataset_root: str = "data/ham10000",
     class_names=tuple(),
+    recorder: ExperimentRecorder | None = None,
 ) -> MetricRecord:
     """Оценивает модель на централизованных данных."""
 
@@ -212,4 +240,7 @@ def global_evaluate(
         print(f"  {name:<12} " + " ".join(f"{value:5d}" for value in row))
 
     # Возвращаем метрики оценки
-    return MetricRecord(metrics_for_flower(metrics))
+    aggregate = MetricRecord(metrics_for_flower(metrics))
+    if recorder is not None:
+        recorder.record_round(server_round, "centralized_test", aggregate)
+    return aggregate

@@ -16,6 +16,21 @@ from pytorchexample.experiment_plots import generate_artifacts, write_summary
 
 
 class ExperimentPlotTests(unittest.TestCase):
+    def test_summary_links_saved_final_model(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            initialize_experiment(root, {"status": "completed"})
+            recorder = ExperimentRecorder(root, ("a", "b"))
+            self.record_centralized_rounds(recorder)
+            (root / "final_model.pt").write_bytes(b"model")
+
+            summary = write_summary(root, ("a", "b"))
+
+            self.assertIn(
+                "[Final model](final_model.pt)",
+                summary.read_text(encoding="utf-8"),
+            )
+
     def record_centralized_rounds(self, recorder):
         for server_round in (0, 1):
             recorder.record_round(server_round, "centralized_test", {
