@@ -157,6 +157,27 @@ class ExperimentRecorderTests(unittest.TestCase):
             matrix = Path(directory) / "confusion_matrices/centralized_round_000.csv"
             self.assertTrue(matrix.is_file())
 
+    def test_record_confusion_maps_supported_aggregate_scopes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("a", "b"))
+
+            recorder.record_confusion(1, "centralized_test", [1, 0, 0, 1])
+            recorder.record_confusion(2, "federated_validation", [1, 0, 0, 1])
+
+            self.assertTrue(
+                (Path(directory) / "confusion_matrices/centralized_round_001.csv").is_file()
+            )
+            self.assertTrue(
+                (Path(directory) / "confusion_matrices/federated_round_002.csv").is_file()
+            )
+
+    def test_record_confusion_rejects_unsupported_aggregate_scope(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("a", "b"))
+
+            with self.assertRaisesRegex(ValueError, "Unsupported aggregate scope"):
+                recorder.record_confusion(1, "centralized_holdout", [1, 0, 0, 1])
+
 
 if __name__ == "__main__":
     unittest.main()

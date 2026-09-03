@@ -55,6 +55,12 @@ PER_CLASS_FIELDS = (
     "recall",
     "f1",
 )
+AGGREGATE_SCOPE_PREFIXES = {
+    "centralized": "centralized",
+    "centralized_test": "centralized",
+    "federated": "federated",
+    "federated_validation": "federated",
+}
 
 
 def slugify(value: str) -> str:
@@ -265,7 +271,9 @@ class ExperimentRecorder:
                 os.fsync(handle.fileno())
             return
 
-        prefix = scope.split("_", 1)[0]
+        prefix = AGGREGATE_SCOPE_PREFIXES.get(scope)
+        if prefix is None:
+            raise ValueError(f"Unsupported aggregate scope: {scope}")
         target = self.experiment_dir / "confusion_matrices" / (
             f"{prefix}_round_{server_round:03d}.csv"
         )
