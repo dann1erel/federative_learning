@@ -18,6 +18,14 @@ from pytorchexample.task import train as train_fn
 app = ClientApp()
 
 
+def client_bookkeeping(msg: Message, context: Context) -> dict[str, int]:
+    """Return the client and strategy round associated with a reply."""
+    return {
+        "client-id": int(context.node_config["partition-id"]),
+        "server-round": int(msg.content["config"]["server-round"]),
+    }
+
+
 @app.train()
 def train(msg: Message, context: Context):
     """Обучает модель на локальных данных."""
@@ -69,6 +77,7 @@ def train(msg: Message, context: Context):
     metrics = {
         "train_loss": train_loss,
         "num-examples": len(trainloader.dataset),
+        **client_bookkeeping(msg, context),
     }
     metric_record = MetricRecord(metrics)
     content = RecordDict({"arrays": model_record, "metrics": metric_record})
@@ -119,6 +128,7 @@ def evaluate(msg: Message, context: Context):
     metrics = {
         **metrics_for_flower(evaluation_metrics),
         "num-examples": len(valloader.dataset),
+        **client_bookkeeping(msg, context),
     }
     metric_record = MetricRecord(metrics)
     content = RecordDict({"metrics": metric_record})
