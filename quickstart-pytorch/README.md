@@ -4,34 +4,58 @@ dataset: [CIFAR-10, HAM10000, FER2013, Cassava Leaf Disease 2020]
 framework: [torch, torchvision]
 ---
 
-# Федеративное обучение с PyTorch и Flower (пример быстрого старта)
+# Федеративное обучение с PyTorch и Flower
 
-В этом вводном примере для Flower используется PyTorch, однако для его запуска не обязательно глубоко знать PyTorch. Тем не менее, это поможет понять, как адаптировать Flower для вашего сценария использования. Сам по себе запуск этого примера довольно прост. В нём применяются [Flower Datasets](https://flower.ai/docs/datasets/) для загрузки, разбиения и предварительной обработки набора данных CIFAR-10.
+Пример локальной федеративной симуляции для классификации изображений. Проект
+поддерживает CIFAR-10, HAM10000, FER2013 и Cassava Leaf Disease 2020, несколько
+сценариев разбиения данных между клиентами и расширенные метрики для
+несбалансированной классификации.
 
-## Набор данных и non-IID-сценарии
+## Быстрый запуск
 
-В эксперименте используется CIFAR-10 с настраиваемым IID-разбиением или
-разбиением Дирихле по меткам. По умолчанию выбран умеренно неоднородный non-IID-сценарий
-`dirichlet-alpha=0.5`. Официальная тестовая выборка остаётся централизованной.
-Обоснование выбора, ограничения и протокол эксперимента приведены в [DATASET.md](DATASET.md).
+Все команды выполняются из каталога `quickstart-pytorch`. Зависимости объявлены
+в `pyproject.toml`, поэтому отдельный `requirements.txt` не нужен.
 
-В экспериментах с естественным дисбалансом используется HAM10000 из Kaggle. Для его
-семи классов соотношение большинства к меньшинству составляет примерно 58:1. Конвейер
-хранит все изображения с одним `lesion_id` вместе, поддерживает естественную федерацию
-из четырёх источников и при необходимости использует глобально сбалансированные веса
-перекрёстной энтропии. См. [HAM10000.md](HAM10000.md).
-
-Шесть наборов данных с естественным дисбалансом были оценены по прозрачной взвешенной
-рубрике. Для HAM10000, FER2013 и Cassava 2020 имеются исполняемые адаптеры и
-проверки работоспособности; научное сравнение и обоснование выбора приведены в
-[DATASET_COMPARISON.md](DATASET_COMPARISON.md).
-
-Загрузите и закэшируйте набор данных, затем сгенерируйте примеры изображений, таблицы классов
-для каждого клиента и тепловые карты распределений:
+Требуется Python 3.10 или новее. Проверенный вариант — Python 3.13.
 
 ```bash
-python scripts/prepare_cifar10.py
+python3 -m venv venv
+source venv/bin/activate
+
+command -v python
+python --version
+python -m pip --version
+
+python -m pip install --upgrade pip
+python -m pip install -e .
 ```
+
+После активации `command -v python` должен указывать на
+`quickstart-pytorch/venv/bin/python`. Если вместо этого выводится строка вида
+`alias python=/usr/bin/python3`, alias перекрывает виртуальное окружение:
+
+```bash
+unalias python
+rehash
+```
+
+Затем удалите или закомментируйте соответствующий `alias python=...` в
+`~/.zshrc`, чтобы проблема не повторялась в новых терминалах. Не используйте
+для установки `sudo` или `--user`.
+
+### CIFAR-10
+
+По умолчанию приложение загружает CIFAR-10 (`uoft-cs/cifar10`) через Hugging
+Face Datasets и запускает локальную Flower-симуляцию:
+
+```bash
+flwr run . --stream
+```
+
+Первый запуск может занять больше времени из-за загрузки и кэширования набора
+данных.
+
+### HAM10000
 
 Подготовьте HAM10000 (примерно 3,2 ГБ в кэше Kaggle):
 
@@ -39,90 +63,170 @@ python scripts/prepare_cifar10.py
 python scripts/prepare_ham10000.py
 ```
 
-Подготовьте лёгкий кандидат FER2013 (около 60 МБ):
+Скрипт создаёт локальные CSV-манифесты в `data/ham10000` и диагностические
+таблицы и изображения в `dataset_examples/ham10000`. Возможны два ожидаемых
+предупреждения:
+
+- Kaggle-зеркало может не содержать официальное тестовое изображение
+  `ISIC_0035068`; тогда тестовая выборка содержит 1511 изображений вместо 1512,
+  а обучающая выборка остаётся полной;
+- `DirichletPartitioner` может повторить построение диагностического разбиения
+  с `alpha=0.1`, пока каждый клиент не получит минимум 50 примеров. Основной
+  запуск ниже использует `alpha=0.5`.
+
+Flower собирает приложение в FAB и запускает его копию из `~/.flwr/apps`.
+Каталог `data/` в FAB не включается, поэтому для локального датасета необходимо
+передать абсолютный путь:
+
+```bash
+flwr run . \
+  --run-config "dataset='ham10000' dataset-root='$PWD/data/ham10000' partitioner='dirichlet' class-weighting='balanced'" \
+  --stream
+```
+
+В Flower 1.31 TOML-файл нельзя передать одновременно с дополнительным
+`--run-config`. Поэтому команда выше заменяет
+`configs/ham10000_dirichlet.toml`, сохраняя его настройки, но подставляя
+абсолютный `dataset-root`.
+
+### FER2013 и Cassava 2020
+
+Подготовьте локальный набор данных:
 
 ```bash
 python scripts/prepare_candidate_dataset.py --dataset fer2013
-```
-
-Подготовьте Cassava 2020 (около 6,19 ГБ; требуются аутентификация в Kaggle и
-принятие правил соревнования):
-
-```bash
 python scripts/prepare_candidate_dataset.py --dataset cassava
 ```
 
-Та же команда принимает `--source-dir` для уже существующей локальной загрузки.
-Примеры переопределений Flower хранятся в `configs/fer2013_dirichlet.toml` и
-`configs/cassava_dirichlet.toml`.
+Cassava 2020 занимает около 6,19 ГБ; для него требуются аутентификация в Kaggle
+и принятие правил соревнования. Обе команды также принимают `--source-dir` для
+уже существующей локальной загрузки.
+
+Запускайте локальные датасеты с абсолютным путём по той же причине, что и
+HAM10000:
 
 ```bash
-flwr run . --run-config configs/fer2013_dirichlet.toml --stream
-flwr run . --run-config configs/cassava_dirichlet.toml --stream
+flwr run . \
+  --run-config "dataset='fer2013' dataset-root='$PWD/data/fer2013' partitioner='dirichlet' class-weighting='balanced'" \
+  --stream
+
+flwr run . \
+  --run-config "dataset='cassava' dataset-root='$PWD/data/cassava' partitioner='dirichlet' class-weighting='balanced'" \
+  --stream
 ```
 
-## Настройка проекта
+## Что происходит во время запуска
 
-### Получение приложения
+Конфигурация по умолчанию создаёт 10 виртуальных клиентов и выполняет три
+раунда FedAvg. Обучающая выборка делится между клиентами по меткам с помощью
+распределения Дирихле (`alpha=0.5`, `seed=42`, минимум 50 примеров на клиента),
+после чего локальная выборка каждого клиента делится на 80% для обучения и 20%
+для валидации.
 
-Установите Flower:
+В каждом раунде все клиенты получают текущую CNN, обучают её одну локальную
+эпоху с SGD (`learning-rate=0.1`, `momentum=0.9`, `batch-size=32`) и возвращают
+веса серверу. Сервер усредняет их пропорционально числу обучающих примеров.
+До первого раунда и после каждого раунда модель также оценивается на
+централизованной тестовой выборке. В логах выводятся loss, accuracy, balanced
+accuracy, macro/weighted precision, recall и F1, метрики каждого класса и
+confusion matrix.
 
-```shell
-pip install flwr
-```
-
-Получите приложение:
-
-```shell
-flwr new @flwrlabs/quickstart-pytorch
-```
-
-Будет создан новый каталог `quickstart-pytorch` со следующей структурой:
-
-```shell
-quickstart-pytorch
-├── pytorchexample
-│   ├── __init__.py
-│   ├── client_app.py   # Определяет ваш ClientApp
-│   ├── server_app.py   # Определяет ваш ServerApp
-│   └── task.py         # Определяет модель, обучение и загрузку данных
-├── pyproject.toml      # Метаданные проекта: зависимости и конфигурации
-└── README.md
-```
-
-### Установка зависимостей и проекта
-
-Установите зависимости из `pyproject.toml`, а также пакет `pytorchexample`.
+По умолчанию итоговые веса не сохраняются (`save-model=false`). Для запуска
+CIFAR-10 с сохранением `final_model.pt` используйте:
 
 ```bash
-pip install -e .
+flwr run . --run-config "save-model=true" --stream
 ```
 
-## Запуск проекта
-
-Проект Flower можно запускать как в режиме _симуляции_, так и в режиме _развёртывания_, не изменяя код. Если вы только начинаете работать с Flower, рекомендуем режим симуляции, поскольку в нём нужно вручную запускать меньше компонентов. По умолчанию `flwr run` использует Simulation Engine.
-
-### Запуск с Simulation Engine
-
-> [!TIP]
-> Этот пример работает быстрее, когда у `ClientApp` есть доступ к GPU. Подробнее о симуляциях Flower и их оптимизации см. в [документации Simulation Engine](https://flower.ai/docs/framework/how-to-run-simulations.html).
+Другие существующие параметры можно переопределить аналогично:
 
 ```bash
-# Запуск с федерацией по умолчанию (только CPU)
-flwr run .  --stream
+flwr run . \
+  --run-config "num-server-rounds=5 learning-rate=0.05" \
+  --stream
 ```
 
-Можно также переопределить некоторые настройки `ClientApp` и `ServerApp`, заданные в `pyproject.toml`. Например:
+## Наборы данных и non-IID-сценарии
+
+Для CIFAR-10 доступны IID-разбиение и разбиение Дирихле по меткам. По умолчанию
+выбран умеренно неоднородный non-IID-сценарий `dirichlet-alpha=0.5`.
+Официальная тестовая выборка остаётся централизованной. Обоснование выбора,
+ограничения и протокол эксперимента приведены в [DATASET.md](DATASET.md).
+
+В экспериментах с естественным дисбалансом используется HAM10000. Для его семи
+классов соотношение большинства к меньшинству составляет примерно 58:1.
+Конвейер хранит все изображения с одним `lesion_id` вместе, поддерживает
+естественную федерацию из четырёх источников и при необходимости использует
+глобально сбалансированные веса перекрёстной энтропии. Подробнее см.
+[HAM10000.md](HAM10000.md).
+
+Шесть наборов данных с естественным дисбалансом оценены по прозрачной
+взвешенной рубрике. Для HAM10000, FER2013 и Cassava 2020 имеются исполняемые
+адаптеры и проверки работоспособности. Научное сравнение и обоснование выбора
+приведены в [DATASET_COMPARISON.md](DATASET_COMPARISON.md).
+
+Для CIFAR-10 можно отдельно сгенерировать примеры изображений, таблицы классов
+клиентов и тепловые карты распределений:
 
 ```bash
-flwr run . --run-config "num-server-rounds=5 learning-rate=0.05"  --stream
+python scripts/prepare_cifar10.py
 ```
 
-> [!TIP]
-> Более подробное руководство см. в нашем [учебнике по быстрому старту с PyTorch](https://flower.ai/docs/framework/tutorial-quickstart-pytorch.html).
+Готовые варианты конфигурации находятся в каталоге `configs/`. При запуске
+локальных наборов учитывайте описанное выше ограничение относительных путей в
+FAB.
 
-### Запуск с Deployment Engine
+## Устранение проблем
 
-Следуйте этому [практическому руководству](https://flower.ai/docs/framework/how-to-run-flower-with-deployment-engine.html), чтобы запустить то же приложение из этого примера с Deployment Engine Flower. Затем можно настроить в своей федерации [защищённую связь с TLS](https://flower.ai/docs/framework/how-to-enable-tls-connections.html) и [аутентификацию SuperNode](https://flower.ai/docs/framework/how-to-authenticate-supernodes.html).
+### `Defaulting to user installation` и несовместимая версия Python
 
-Если вы уже знакомы с работой Deployment Engine, возможно, вам будет полезно узнать, как запускать его с помощью Docker. См. документацию [Flower with Docker](https://flower.ai/docs/framework/docker/index.html).
+Проверьте, что команда `python` действительно принадлежит окружению:
+
+```bash
+command -v python
+python --version
+python -m pip --version
+```
+
+При необходимости обойдите shell-alias и вызовите интерпретатор напрямую:
+
+```bash
+./venv/bin/python -m pip install -e .
+./venv/bin/flwr run . --stream
+```
+
+### `Can't locate revision identified by ...`
+
+Такое сообщение означает, что служебная база локального SuperLink была создана
+несовместимой версией Flower. Сохраните её как резервную копию; следующий запуск
+создаст новую базу:
+
+```bash
+mkdir -p ~/.flwr/local-superlink/backup
+mv ~/.flwr/local-superlink/state.db ~/.flwr/local-superlink/backup/
+mv ~/.flwr/local-superlink/state.db-shm ~/.flwr/local-superlink/backup/ 2>/dev/null
+mv ~/.flwr/local-superlink/state.db-wal ~/.flwr/local-superlink/backup/ 2>/dev/null
+
+flwr run . --stream
+```
+
+### `Missing ~/.flwr/apps/.../data/<dataset>/test.csv`
+
+Данные существуют в рабочем каталоге, но не входят в FAB. Не копируйте их в
+`~/.flwr/apps`: хеш каталога меняется при сборке. Запустите приложение с
+абсолютным `dataset-root`, как показано в командах для HAM10000, FER2013 и
+Cassava выше.
+
+## Deployment Engine
+
+Проект можно запускать не только в режиме симуляции, но и через Deployment
+Engine без изменения кода. Инструкции по развёртыванию, TLS, аутентификации
+SuperNode и Docker приведены в документации Flower:
+
+- [Deployment Engine](https://flower.ai/docs/framework/how-to-run-flower-with-deployment-engine.html)
+- [TLS](https://flower.ai/docs/framework/how-to-enable-tls-connections.html)
+- [аутентификация SuperNode](https://flower.ai/docs/framework/how-to-authenticate-supernodes.html)
+- [Flower with Docker](https://flower.ai/docs/framework/docker/index.html)
+
+Дополнительный материал: [учебник по быстрому старту с
+PyTorch](https://flower.ai/docs/framework/tutorial-quickstart-pytorch.html).
