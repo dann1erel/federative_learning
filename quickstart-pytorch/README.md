@@ -1,12 +1,65 @@
 ---
 tags: [quickstart, vision, fds]
-dataset: [CIFAR-10]
+dataset: [CIFAR-10, HAM10000, FER2013, Cassava Leaf Disease 2020]
 framework: [torch, torchvision]
 ---
 
 # Federated Learning with PyTorch and Flower (Quickstart Example)
 
 This introductory example to Flower uses PyTorch, but deep knowledge of PyTorch is not necessarily required to run the example. However, it will help you understand how to adapt Flower to your use case. Running this example in itself is quite easy. This example uses [Flower Datasets](https://flower.ai/docs/datasets/) to download, partition and preprocess the CIFAR-10 dataset.
+
+## Dataset and non-IID scenarios
+
+The experiment uses CIFAR-10 with a configurable IID or label-based Dirichlet
+partition. The default is the moderately non-IID `dirichlet-alpha=0.5` scenario.
+The official test split stays centralized. See [DATASET.md](DATASET.md) for the
+selection rationale, limitations, and experiment protocol.
+
+The naturally imbalanced experiments use HAM10000 from Kaggle. Its
+seven classes have a majority/minority ratio of about 58:1. The pipeline keeps
+all images of one `lesion_id` together, supports a four-source natural
+federation, and optionally uses globally balanced cross-entropy weights. See
+[HAM10000.md](HAM10000.md).
+
+Six naturally imbalanced datasets were evaluated using a transparent weighted
+rubric. HAM10000, FER2013, and Cassava 2020 have executable adapters and smoke
+tests; the scientific comparison and selection rationale are in
+[DATASET_COMPARISON.md](DATASET_COMPARISON.md).
+
+Download/cache the dataset and generate sample images, per-client class tables,
+and distribution heatmaps:
+
+```bash
+python scripts/prepare_cifar10.py
+```
+
+Prepare HAM10000 (approximately 3.2 GB in the Kaggle cache):
+
+```bash
+python scripts/prepare_ham10000.py
+```
+
+Prepare the lightweight FER2013 candidate (about 60 MB):
+
+```bash
+python scripts/prepare_candidate_dataset.py --dataset fer2013
+```
+
+Prepare Cassava 2020 (about 6.19 GB; Kaggle authentication and accepted
+competition rules are required):
+
+```bash
+python scripts/prepare_candidate_dataset.py --dataset cassava
+```
+
+The same command accepts `--source-dir` for an existing local download. Example
+Flower overrides are stored in `configs/fer2013_dirichlet.toml` and
+`configs/cassava_dirichlet.toml`.
+
+```bash
+flwr run . --run-config configs/fer2013_dirichlet.toml --stream
+flwr run . --run-config configs/cassava_dirichlet.toml --stream
+```
 
 ## Set up the project
 

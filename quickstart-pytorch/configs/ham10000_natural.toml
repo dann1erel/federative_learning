@@ -1,0 +1,5 @@
+dataset = "ham10000"
+dataset-root = "data/ham10000"
+partitioner = "natural"
+class-weighting = "balanced"
+seed = 42

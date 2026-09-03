@@ -1,0 +1,7 @@
+dataset,total_labeled_images_used,num_classes,majority_class,majority_count,minority_class,minority_count,imbalance_ratio,research_fit_0_5,natural_imbalance_0_5,federated_suitability_0_5,label_and_leakage_control_0_5,reproducibility_and_license_0_5,technical_feasibility_0_5,weighted_score_0_5,technical_check
+HAM10000,10015,7,nv,6705,df,115,58.30,5.0,5.0,5.0,4.5,4.5,4.0,4.78,full
+ISIC 2019,25331,8,NV,12875,DF,239,53.87,4.5,5.0,4.0,4.5,4.0,2.0,4.20,literature_only_overlap
+APTOS 2019,3662,5,no_DR,1805,severe_DR,193,9.35,3.5,3.0,2.0,3.0,2.0,2.0,2.73,literature_only
+FER2013,35887,7,happy,8989,disgust,547,16.43,3.0,3.5,1.0,2.0,3.0,5.0,2.75,full
+Chest X-Ray Pneumonia,5856,2,pneumonia,4273,normal,1583,2.70,2.5,2.0,2.0,4.0,4.5,3.5,2.83,literature_only
+Cassava Leaf Disease 2020,21397,5,CMD,13158,CBB,1087,12.11,4.0,4.0,2.5,3.0,2.5,3.0,3.30,fixture_access_requires_auth

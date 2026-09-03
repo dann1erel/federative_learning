@@ -13,6 +13,13 @@ dist/
 *.fab
 .pytest_cache/
 
+# Downloaded datasets and generated local manifests
+data/
+
+# Candidate previews can contain copyrighted or personally identifiable source images.
+dataset_examples/fer2013/samples.png
+dataset_examples/cassava/samples.png
+
 # Local editor and OS metadata
 .DS_Store
 .idea/

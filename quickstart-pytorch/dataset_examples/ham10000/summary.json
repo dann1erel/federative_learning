@@ -1,0 +1,87 @@
+{
+  "dataset": "HAM10000",
+  "kaggle_handle": "eliocordeiropereira/skin-cancer-the-ham10000-dataset",
+  "kaggle_version": "1",
+  "license": "CC BY-NC 4.0",
+  "seed": 42,
+  "test_split": "official ISIC 2018 Task 3 test set",
+  "source_train_images": 10015,
+  "source_train_lesions": 7470,
+  "train_images": 10015,
+  "test_images": 1511,
+  "missing_official_test_images": [
+    "ISIC_0035068"
+  ],
+  "class_counts": {
+    "akiec": 327,
+    "bcc": 514,
+    "bkl": 1099,
+    "df": 115,
+    "mel": 1113,
+    "nv": 6705,
+    "vasc": 142
+  },
+  "test_class_counts": {
+    "akiec": 43,
+    "bcc": 93,
+    "bkl": 217,
+    "df": 44,
+    "mel": 171,
+    "nv": 908,
+    "vasc": 35
+  },
+  "majority_to_minority_ratio": 58.30434782608695,
+  "natural_client_mapping": {
+    "0": "rosendahl",
+    "1": "vidir_modern",
+    "2": "vidir_molemax",
+    "3": "vienna_dias"
+  },
+  "client_scenarios": [
+    {
+      "partitioner": "natural",
+      "alpha": null,
+      "num_clients": 4,
+      "min_client_samples": 439,
+      "max_client_samples": 3945,
+      "quantity_coefficient_of_variation": 0.5341438188313794,
+      "mean_normalized_label_entropy": 0.4950456029296475
+    },
+    {
+      "partitioner": "iid",
+      "alpha": null,
+      "num_clients": 10,
+      "min_client_samples": 983,
+      "max_client_samples": 1031,
+      "quantity_coefficient_of_variation": 0.014751159962750032,
+      "mean_normalized_label_entropy": 0.5785739791385635
+    },
+    {
+      "partitioner": "dirichlet",
+      "alpha": 1.0,
+      "num_clients": 10,
+      "min_client_samples": 322,
+      "max_client_samples": 3905,
+      "quantity_coefficient_of_variation": 1.0137059429067852,
+      "mean_normalized_label_entropy": 0.613714526352992
+    },
+    {
+      "partitioner": "dirichlet",
+      "alpha": 0.5,
+      "num_clients": 10,
+      "min_client_samples": 119,
+      "max_client_samples": 4019,
+      "quantity_coefficient_of_variation": 1.1050864464382746,
+      "mean_normalized_label_entropy": 0.5331595058026176
+    },
+    {
+      "partitioner": "dirichlet",
+      "alpha": 0.1,
+      "num_clients": 10,
+      "min_client_samples": 138,
+      "max_client_samples": 2614,
+      "quantity_coefficient_of_variation": 0.8943167465250539,
+      "mean_normalized_label_entropy": 0.2317590925723915
+    }
+  ]
+}

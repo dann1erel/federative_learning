@@ -1,0 +1,7 @@
+dataset = "ham10000"
+dataset-root = "data/ham10000"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.5
+dirichlet-min-partition-size = 50
+class-weighting = "balanced"
+seed = 42
