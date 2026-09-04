@@ -1,8 +1,11 @@
+import io
 import json
 import os
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -13,11 +16,57 @@ from scripts.run_experiment import (
     collect_environment,
     load_app_defaults,
     load_override_file,
+    main,
     make_experiment_slug,
     merge_config,
     parse_args,
     run_and_capture,
 )
+
+
+def _read_pid(path: Path) -> int | None:
+    if not path.exists():
+        return None
+    return int(path.read_text(encoding="utf-8").strip())
+
+
+def _process_exists(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def _kill_pid(pid: int | None) -> None:
+    if pid is None:
+        return
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except OSError:
+        return
+
+    deadline = time.monotonic() + 1.0
+    while time.monotonic() < deadline and _process_exists(pid):
+        time.sleep(0.01)
+
+
+def _wait_for_pid(path: Path, timeout: float = 1.0) -> int | None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        pid = _read_pid(path)
+        if pid is not None:
+            return pid
+        time.sleep(0.01)
+    return _read_pid(path)
+
+
+class _ExplodingStdout:
+    def write(self, _: str) -> int:
+        raise RuntimeError("stdout failed")
+
+    def flush(self) -> None:
+        return None
 
 
 class RunnerConfigurationTests(unittest.TestCase):
@@ -169,6 +218,87 @@ class RunnerProcessTests(unittest.TestCase):
         self.assertIn("packages", metadata)
         self.assertNotIn("environ", metadata)
 
+    def test_run_and_capture_opens_log_before_spawning_child(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cwd = Path(directory)
+            child_pid_path = cwd / "child.pid"
+            invalid_log_path = cwd / "console-dir"
+            invalid_log_path.mkdir()
+            command = [
+                sys.executable,
+                "-c",
+                (
+                    "import pathlib, time; "
+                    f"pathlib.Path({str(child_pid_path)!r}).write_text('started', encoding='utf-8'); "
+                    "time.sleep(30)"
+                ),
+            ]
+
+            with self.assertRaises(IsADirectoryError):
+                run_and_capture(command, cwd, invalid_log_path)
+
+            time.sleep(0.3)
+            self.assertFalse(
+                child_pid_path.exists(),
+                "child started before console.log was opened successfully",
+            )
+
+    def test_run_and_capture_reaps_child_when_stdout_write_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cwd = Path(directory)
+            child_pid_path = cwd / "child.pid"
+            log_path = cwd / "console.log"
+            command = [
+                sys.executable,
+                "-c",
+                (
+                    "import pathlib, time; "
+                    f"pathlib.Path({str(child_pid_path)!r}).write_text(str(__import__('os').getpid()), encoding='utf-8'); "
+                    "print('child output', flush=True); "
+                    "time.sleep(30)"
+                ),
+            ]
+
+            with self.assertRaisesRegex(RuntimeError, "stdout failed"):
+                with patch("scripts.run_experiment.sys.stdout", new=_ExplodingStdout()):
+                    run_and_capture(command, cwd, log_path)
+
+            child_pid = _wait_for_pid(child_pid_path)
+            child_running = child_pid is not None and _process_exists(child_pid)
+            _kill_pid(child_pid)
+            self.assertIsNotNone(child_pid)
+            self.assertFalse(child_running, "child was left running after stdout failure")
+
+    def test_run_and_capture_kills_child_that_ignores_sigint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cwd = Path(directory)
+            child_pid_path = cwd / "child.pid"
+            log_path = cwd / "console.log"
+            command = [
+                sys.executable,
+                "-c",
+                (
+                    "import os, pathlib, signal, time; "
+                    f"pathlib.Path({str(child_pid_path)!r}).write_text(str(os.getpid()), encoding='utf-8'); "
+                    "signal.signal(signal.SIGINT, signal.SIG_IGN); "
+                    "print('child ready', flush=True); "
+                    "os.kill(os.getppid(), signal.SIGINT); "
+                    "time.sleep(30)"
+                ),
+            ]
+
+            started = time.monotonic()
+            with self.assertRaises(KeyboardInterrupt):
+                run_and_capture(command, cwd, log_path, stop_timeout=0.1)
+            elapsed = time.monotonic() - started
+
+            child_pid = _wait_for_pid(child_pid_path)
+            child_running = child_pid is not None and _process_exists(child_pid)
+            _kill_pid(child_pid)
+            self.assertIsNotNone(child_pid)
+            self.assertLess(elapsed, 1.0)
+            self.assertFalse(child_running, "child ignoring SIGINT was not killed and reaped")
+
 
 class RunnerCliTests(unittest.TestCase):
     def test_parse_args_suppresses_unsupplied_overrides(self):
@@ -232,6 +362,29 @@ class RunnerCliTests(unittest.TestCase):
                 (experiment_dir / "console.log").read_text(encoding="utf-8").strip(),
                 "fake flwr failed",
             )
+
+    def test_main_prints_result_path_when_environment_collection_is_interrupted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            results_root = Path(directory) / "results"
+            output = io.StringIO()
+            with patch(
+                "scripts.run_experiment.collect_environment", side_effect=KeyboardInterrupt
+            ):
+                with patch("scripts.run_experiment.sys.stdout", new=output):
+                    try:
+                        result = main(["--results-root", str(results_root), "--num-clients", "2"])
+                    except KeyboardInterrupt:
+                        result = "raised"
+
+            stdout_lines = output.getvalue().strip().splitlines()
+            self.assertEqual(result, 130)
+            self.assertTrue(stdout_lines, output.getvalue())
+            experiment_dir = Path(stdout_lines[-1])
+            manifest = json.loads((experiment_dir / "experiment.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["status"], "aborted")
+            self.assertEqual(manifest["exit_code"], 130)
+            self.assertIn("finished_at", manifest)
+            self.assertIn("duration_seconds", manifest)
 
     def _run_script(self, fake_flwr_dir: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
         root = Path(__file__).resolve().parents[1]
@@ -342,24 +495,49 @@ class RunnerLifecycleTests(unittest.TestCase):
                 "child failed",
             )
 
-    def test_keyboard_interrupt_marks_aborted_with_exit_130(self):
+    def test_real_child_interrupt_marks_aborted_with_exit_130(self):
         with tempfile.TemporaryDirectory() as directory:
             experiment_dir = Path(directory) / "result"
+            child_pid_path = Path(directory) / "child.pid"
+            interrupted_path = Path(directory) / "child-interrupted"
+            child = "\n".join(
+                [
+                    "import os",
+                    "import pathlib",
+                    "import signal",
+                    "import time",
+                    f"path = pathlib.Path({str(child_pid_path)!r})",
+                    f"interrupted = pathlib.Path({str(interrupted_path)!r})",
+                    "path.write_text(str(os.getpid()), encoding='utf-8')",
+                    "def handle(_signum, _frame):",
+                    "    interrupted.write_text('sigint', encoding='utf-8')",
+                    "    raise SystemExit(0)",
+                    "signal.signal(signal.SIGINT, handle)",
+                    "print('child ready', flush=True)",
+                    "os.kill(os.getppid(), signal.SIGINT)",
+                    "time.sleep(30)",
+                ]
+            )
 
-            with patch("scripts.run_experiment.run_and_capture", side_effect=KeyboardInterrupt):
-                code = _run_lifecycle(
-                    [sys.executable, "-c", "print('interrupted')"],
-                    Path(directory),
-                    experiment_dir,
-                    {"dataset": "fixture"},
-                    {"num-supernodes": 2},
-                )
+            code = _run_lifecycle(
+                [sys.executable, "-c", child],
+                Path(directory),
+                experiment_dir,
+                {"dataset": "fixture"},
+                {"num-supernodes": 2},
+            )
 
             manifest = json.loads((experiment_dir / "experiment.json").read_text())
             self.assertEqual(code, 130)
             self.assertEqual(manifest["status"], "aborted")
             self.assertEqual(manifest["exit_code"], 130)
             self.assertTrue((experiment_dir / "environment.json").exists())
+            self.assertIn("finished_at", manifest)
+            self.assertIn("duration_seconds", manifest)
+            self.assertTrue(interrupted_path.exists())
+            child_pid = _wait_for_pid(child_pid_path)
+            self.assertIsNotNone(child_pid)
+            self.assertFalse(_process_exists(child_pid))
 
 
 if __name__ == "__main__":

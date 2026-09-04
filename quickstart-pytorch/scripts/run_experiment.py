@@ -37,6 +37,7 @@ except ModuleNotFoundError:  # pragma: no cover
 ALLOWED_SCALAR_TYPES = (bool, int, float, str)
 RUNNER_OWNED_KEYS = {"experiment-dir"}
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+PROCESS_STOP_TIMEOUT_SECONDS = 5.0
 
 
 def load_app_defaults(project_root: Path) -> dict[str, Scalar]:
@@ -164,33 +165,42 @@ def collect_environment(command: Sequence[str], project_root: Path) -> dict[str,
     }
 
 
-def run_and_capture(command: Sequence[str], cwd: Path, log_path: Path) -> int:
+def run_and_capture(
+    command: Sequence[str],
+    cwd: Path,
+    log_path: Path,
+    *,
+    stop_timeout: float = PROCESS_STOP_TIMEOUT_SECONDS,
+) -> int:
     """Run one child process while teeing terminal output to a plain-text log."""
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    child = subprocess.Popen(
-        list(command),
-        cwd=Path(cwd),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-    try:
-        with log_path.open("w", encoding="utf-8") as log:
+    with log_path.open("w", encoding="utf-8") as log:
+        child = subprocess.Popen(
+            list(command),
+            cwd=Path(cwd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        try:
             assert child.stdout is not None
             for line in child.stdout:
                 sys.stdout.write(line)
                 sys.stdout.flush()
                 log.write(ANSI_ESCAPE_RE.sub("", line))
                 log.flush()
-        return child.wait()
-    except KeyboardInterrupt:
-        _interrupt_child(child)
-        raise
-    finally:
-        if child.stdout is not None:
-            child.stdout.close()
+            return child.wait()
+        except KeyboardInterrupt:
+            _interrupt_child(child, timeout=stop_timeout)
+            raise
+        except BaseException:
+            _terminate_child(child, timeout=stop_timeout)
+            raise
+        finally:
+            if child.stdout is not None:
+                child.stdout.close()
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -272,12 +282,12 @@ def _run_lifecycle(
     if name is not None:
         metadata["name"] = name
     initialize_experiment(experiment_dir, metadata)
-    atomic_write_json(
-        Path(experiment_dir) / "environment.json",
-        collect_environment(command, project_root),
-    )
 
     try:
+        atomic_write_json(
+            Path(experiment_dir) / "environment.json",
+            collect_environment(command, project_root),
+        )
         exit_code = run_and_capture(command, project_root, Path(experiment_dir) / "console.log")
     except KeyboardInterrupt:
         _finalize_lifecycle(experiment_dir, started_at, "aborted", 130)
@@ -389,12 +399,26 @@ def _git_metadata(project_root: Path) -> dict[str, object]:
     return {"commit": commit, "dirty": bool(dirty_output) if dirty_output is not None else None}
 
 
-def _interrupt_child(child: subprocess.Popen[str]) -> None:
+def _interrupt_child(
+    child: subprocess.Popen[str], *, timeout: float = PROCESS_STOP_TIMEOUT_SECONDS
+) -> None:
+    _stop_child(child, signal.SIGINT, timeout=timeout)
+
+
+def _terminate_child(
+    child: subprocess.Popen[str], *, timeout: float = PROCESS_STOP_TIMEOUT_SECONDS
+) -> None:
+    _stop_child(child, signal.SIGTERM, timeout=timeout)
+
+
+def _stop_child(child: subprocess.Popen[str], signum: int, *, timeout: float) -> None:
     if child.poll() is not None:
         return
     try:
-        child.send_signal(signal.SIGINT)
-        child.wait(timeout=5)
+        child.send_signal(signum)
+        child.wait(timeout=timeout)
+    except ProcessLookupError:
+        child.wait()
     except subprocess.TimeoutExpired:
         child.kill()
         child.wait()
