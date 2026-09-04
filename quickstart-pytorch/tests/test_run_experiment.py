@@ -16,6 +16,7 @@ except ModuleNotFoundError:  # pragma: no cover
     import tomli as tomllib
 
 from scripts.run_experiment import (
+    _validate_config,
     _run_lifecycle,
     build_flwr_command,
     collect_environment,
@@ -80,6 +81,12 @@ class _ExplodingStdout:
 
 
 class RunnerConfigurationTests(unittest.TestCase):
+    def _valid_config(self, **overrides):
+        root = Path(__file__).resolve().parents[1]
+        config = load_app_defaults(root)
+        config.update(overrides)
+        return config
+
     def test_project_declares_recording_configuration_and_dependencies(self):
         root = Path(__file__).resolve().parents[1]
         project = load_toml(root / "pyproject.toml")
@@ -211,6 +218,34 @@ class RunnerConfigurationTests(unittest.TestCase):
             run_config,
         )
 
+    def test_validate_config_rejects_string_save_model(self):
+        with self.assertRaisesRegex(ValueError, "save-model"):
+            _validate_config(self._valid_config(**{"save-model": "false"}))
+
+    def test_validate_config_rejects_bad_partitioner(self):
+        with self.assertRaisesRegex(ValueError, "partitioner"):
+            _validate_config(self._valid_config(partitioner="shards"))
+
+    def test_validate_config_rejects_natural_partitioner_for_non_ham10000(self):
+        with self.assertRaisesRegex(ValueError, "natural"):
+            _validate_config(self._valid_config(dataset="cifar10", partitioner="natural"))
+
+    def test_validate_config_rejects_bad_class_weighting(self):
+        with self.assertRaisesRegex(ValueError, "class-weighting"):
+            _validate_config(self._valid_config(**{"class-weighting": "inverse"}))
+
+    def test_validate_config_rejects_bool_seed_and_non_string_dataset(self):
+        with self.assertRaisesRegex(ValueError, "seed"):
+            _validate_config(self._valid_config(seed=True))
+        with self.assertRaisesRegex(ValueError, "dataset"):
+            _validate_config(self._valid_config(dataset=100))
+
+    def test_validate_config_rejects_empty_local_paths(self):
+        with self.assertRaisesRegex(ValueError, "dataset-root"):
+            _validate_config(self._valid_config(**{"dataset-root": "  "}))
+        with self.assertRaisesRegex(ValueError, "experiment-dir"):
+            _validate_config(self._valid_config(**{"experiment-dir": "  "}))
+
 
 class RunnerProcessTests(unittest.TestCase):
     def test_run_and_capture_strips_ansi_and_returns_child_code(self):
@@ -235,6 +270,20 @@ class RunnerProcessTests(unittest.TestCase):
 
         self.assertIn("python", metadata)
         self.assertIn("packages", metadata)
+        self.assertIn("runtime_device", metadata["torch"])
+        self.assertIn("cuda_device_count", metadata["torch"])
+        self.assertIn("cuda_device_name", metadata["torch"])
+        for package in (
+            "flwr",
+            "torch",
+            "torchvision",
+            "datasets",
+            "matplotlib",
+            "flwr-datasets",
+            "kagglehub",
+            "Pillow",
+        ):
+            self.assertIn(package, metadata["packages"])
         self.assertNotIn("environ", metadata)
 
     def test_run_and_capture_opens_log_before_spawning_child(self):
@@ -327,6 +376,26 @@ class RunnerCliTests(unittest.TestCase):
         self.assertFalse(hasattr(args, "dataset"))
         self.assertFalse(hasattr(args, "num_server_rounds"))
         self.assertFalse(hasattr(args, "save_model"))
+
+    def test_invalid_cli_config_fails_before_spawning_flower(self):
+        with tempfile.TemporaryDirectory() as directory:
+            results_root = Path(directory) / "results"
+
+            with patch("scripts.run_experiment.run_and_capture") as run:
+                with self.assertRaisesRegex(ValueError, "partitioner"):
+                    main(
+                        [
+                            "--results-root",
+                            str(results_root),
+                            "--num-clients",
+                            "2",
+                            "--partitioner",
+                            "unknown",
+                        ]
+                    )
+
+            run.assert_not_called()
+            self.assertFalse(results_root.exists())
 
     def test_script_invocation_runs_main_and_records_completed_run(self):
         with tempfile.TemporaryDirectory() as directory:

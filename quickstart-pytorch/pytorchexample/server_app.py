@@ -136,7 +136,11 @@ def aggregate_train_metrics(
                     aggregate[name] = float(aggregate.get(name, 0.0)) + value * weight
 
     if recorder is not None and server_round is not None:
-        recorder.record_round(server_round, "train", aggregate)
+        record_payload = dict(aggregate)
+        record_payload["num_examples"] = sum(
+            int(metrics[weighting_metric_name]) for metrics in client_metrics
+        )
+        recorder.record_round(server_round, "train", record_payload)
     return aggregate
 
 
@@ -180,7 +184,9 @@ def aggregate_evaluate_metrics(
     metrics["loss"] = weighted_loss / total_examples if total_examples else 0.0
     aggregate = MetricRecord(metrics_for_flower(metrics))
     if recorder is not None and server_round is not None:
-        recorder.record_round(server_round, "federated_validation", aggregate)
+        record_payload = dict(aggregate)
+        record_payload["num_examples"] = total_examples
+        recorder.record_round(server_round, "federated_validation", record_payload)
     return aggregate
 
 
@@ -242,5 +248,9 @@ def global_evaluate(
     # Возвращаем метрики оценки
     aggregate = MetricRecord(metrics_for_flower(metrics))
     if recorder is not None:
-        recorder.record_round(server_round, "centralized_test", aggregate)
+        record_payload = dict(aggregate)
+        record_payload["num_examples"] = sum(
+            int(value) for value in aggregate["per_class_support"]
+        )
+        recorder.record_round(server_round, "centralized_test", record_payload)
     return aggregate

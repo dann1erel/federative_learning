@@ -235,6 +235,8 @@ class ExperimentRecorder:
         for field in ROUND_FIELDS[2:]:
             if field in metrics:
                 row[field] = metrics[field]
+            elif field == "loss" and "train_loss" in metrics:
+                row[field] = metrics["train_loss"]
             elif field == "num_examples" and "num-examples" in metrics:
                 row[field] = metrics["num-examples"]
         _append_csv(self.experiment_dir / "round_metrics.csv", ROUND_FIELDS, [row])

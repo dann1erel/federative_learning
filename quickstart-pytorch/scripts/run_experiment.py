@@ -28,6 +28,7 @@ from pytorchexample.experiment import (
     slugify,
     update_manifest,
 )
+from pytorchexample.task import get_dataset_spec
 
 try:
     import tomllib
@@ -138,10 +139,16 @@ def collect_environment(command: Sequence[str], project_root: Path) -> dict[str,
         import torch
 
         mps_backend = getattr(torch.backends, "mps", None)
+        cuda_available = torch.cuda.is_available()
         torch_metadata: dict[str, object] = {
             "version": torch.__version__,
-            "cuda_available": torch.cuda.is_available(),
+            "runtime_device": "cuda:0" if cuda_available else "cpu",
+            "cuda_available": cuda_available,
             "cuda_version": torch.version.cuda,
+            "cuda_device_count": torch.cuda.device_count() if cuda_available else 0,
+            "cuda_device_name": torch.cuda.get_device_name(0)
+            if cuda_available
+            else None,
             "mps_available": bool(mps_backend and mps_backend.is_available()),
         }
     except ImportError:  # pragma: no cover - torch is a project dependency
@@ -157,7 +164,16 @@ def collect_environment(command: Sequence[str], project_root: Path) -> dict[str,
         },
         "packages": {
             name: _installed_version(name)
-            for name in ("flwr", "torch", "torchvision", "datasets")
+            for name in (
+                "flwr",
+                "torch",
+                "torchvision",
+                "datasets",
+                "matplotlib",
+                "flwr-datasets",
+                "kagglehub",
+                "Pillow",
+            )
         },
         "torch": torch_metadata,
         "git": _git_metadata(Path(project_root)),
@@ -341,6 +357,28 @@ def _cli_config_values(args: argparse.Namespace) -> dict[str, Scalar]:
 
 
 def _validate_config(config: Mapping[str, Scalar]) -> None:
+    dataset = _require_string(config, "dataset")
+    dataset_spec = get_dataset_spec(dataset)
+    _require_non_empty_path(config, "dataset-root")
+    _require_integer(config, "seed")
+
+    save_model = config.get("save-model")
+    if not isinstance(save_model, bool):
+        raise ValueError("save-model must be a bool")
+
+    partitioner = _require_string(config, "partitioner").strip().lower()
+    if partitioner not in {"iid", "dirichlet", "natural"}:
+        raise ValueError("partitioner must be 'iid', 'dirichlet', or 'natural'")
+    if partitioner == "natural" and dataset_spec.name != "ham10000":
+        raise ValueError("The natural partitioner is available only for HAM10000")
+
+    class_weighting = _require_string(config, "class-weighting").strip().lower()
+    if class_weighting not in {"none", "balanced"}:
+        raise ValueError("class-weighting must be 'none' or 'balanced'")
+
+    if "experiment-dir" in config and config["experiment-dir"] != "":
+        _require_non_empty_path(config, "experiment-dir")
+
     for key in (
         "num-server-rounds",
         "local-epochs",
@@ -357,6 +395,27 @@ def _validate_config(config: Mapping[str, Scalar]) -> None:
     fraction_evaluate = _require_number(config, "fraction-evaluate")
     if not 0 < fraction_evaluate <= 1:
         raise ValueError("fraction-evaluate must be greater than 0 and at most 1")
+
+
+def _require_string(config: Mapping[str, Scalar], key: str) -> str:
+    value = config.get(key)
+    if not isinstance(value, str):
+        raise ValueError(f"{key} must be a string")
+    return value
+
+
+def _require_non_empty_path(config: Mapping[str, Scalar], key: str) -> str:
+    value = _require_string(config, key)
+    if not value.strip():
+        raise ValueError(f"{key} must be a non-empty string path")
+    return value
+
+
+def _require_integer(config: Mapping[str, Scalar], key: str) -> int:
+    value = config.get(key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{key} must be an integer")
+    return value
 
 
 def _require_positive_integer(config: Mapping[str, Scalar], key: str) -> None:
@@ -478,7 +537,7 @@ def _validated_flat_mapping(
 
 
 def _resolve_local_path(project_root: Path, value: Scalar, key: str) -> str:
-    if not isinstance(value, str) or not value:
+    if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{key} must be a non-empty string path")
 
     path = Path(value).expanduser()

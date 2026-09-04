@@ -189,6 +189,36 @@ class ExperimentRecorderTests(unittest.TestCase):
             matrix = Path(directory) / "confusion_matrices/centralized_round_000.csv"
             self.assertTrue(matrix.is_file())
 
+    def test_record_round_maps_train_loss_and_flower_example_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("a", "b"))
+
+            recorder.record_round(
+                3,
+                "train",
+                {"train_loss": 1.25, "num-examples": 9},
+            )
+
+            with open(Path(directory) / "round_metrics.csv", encoding="utf-8") as handle:
+                rows = list(DictReader(handle))
+
+            self.assertEqual(rows[0]["loss"], "1.25")
+            self.assertEqual(rows[0]["num_examples"], "9")
+
+    def test_repeated_round_appends_write_header_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("a", "b"))
+
+            recorder.record_round(1, "train", {"loss": 1.0})
+            recorder.record_round(2, "train", {"loss": 0.5})
+
+            lines = (Path(directory) / "round_metrics.csv").read_text(
+                encoding="utf-8"
+            ).splitlines()
+
+            self.assertEqual(lines[0].count("round,source,loss"), 1)
+            self.assertEqual(sum(1 for line in lines if line.startswith("round,")), 1)
+
     def test_record_confusion_maps_supported_aggregate_scopes(self):
         with tempfile.TemporaryDirectory() as directory:
             recorder = ExperimentRecorder(directory, ("a", "b"))
@@ -209,6 +239,13 @@ class ExperimentRecorderTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "Unsupported aggregate scope"):
                 recorder.record_confusion(1, "centralized_holdout", [1, 0, 0, 1])
+
+    def test_record_confusion_rejects_malformed_square_shape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("a", "b"))
+
+            with self.assertRaisesRegex(ValueError, "square matrix"):
+                recorder.record_confusion(1, "centralized_test", [[1, 0], [0, 1, 0]])
 
 
 if __name__ == "__main__":

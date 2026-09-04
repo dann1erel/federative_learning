@@ -69,7 +69,12 @@ class MetricsTest(unittest.TestCase):
         ):
             result = global_evaluate(0, arrays, recorder=recorder)
 
-        recorder.record_round.assert_called_once_with(0, "centralized_test", result)
+        self.assertNotIn("num_examples", result)
+        recorder.record_round.assert_called_once()
+        args = recorder.record_round.call_args.args
+        self.assertEqual(args[:2], (0, "centralized_test"))
+        self.assertEqual(args[2]["loss"], result["loss"])
+        self.assertEqual(args[2]["num_examples"], 10)
 
     def test_client_bookkeeping_reads_strategy_round_and_partition_id(self):
         msg = Mock(content=RecordDict({"config": ConfigRecord({"server-round": 4})}))
@@ -96,8 +101,39 @@ class MetricsTest(unittest.TestCase):
         result = aggregate_train_metrics(records, "num-examples", recorder)
 
         self.assertEqual(result["train_loss"], 2.5)
+        self.assertNotIn("num_examples", result)
         recorder.record_clients.assert_called_once_with("train", records)
-        recorder.record_round.assert_called_once_with(2, "train", result)
+        recorder.record_round.assert_called_once()
+        args = recorder.record_round.call_args.args
+        self.assertEqual(args[:2], (2, "train"))
+        self.assertEqual(args[2]["train_loss"], result["train_loss"])
+        self.assertEqual(args[2]["num_examples"], 4)
+
+    def test_train_aggregation_records_round_loss_and_example_count_without_changing_return(self):
+        from pytorchexample.experiment import ExperimentRecorder
+
+        records = [
+            RecordDict({"metrics": MetricRecord({
+                "client-id": 0, "server-round": 2,
+                "num-examples": 1, "train_loss": 1.0,
+            })}),
+            RecordDict({"metrics": MetricRecord({
+                "client-id": 1, "server-round": 2,
+                "num-examples": 3, "train_loss": 3.0,
+            })}),
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("a", "b"))
+
+            result = aggregate_train_metrics(records, "num-examples", recorder)
+
+            with open(Path(directory) / "round_metrics.csv", encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+
+        self.assertEqual(dict(result), {"train_loss": 2.5})
+        self.assertEqual(rows[0]["source"], "train")
+        self.assertEqual(rows[0]["loss"], "2.5")
+        self.assertEqual(rows[0]["num_examples"], "4")
 
     def test_evaluate_aggregation_is_unchanged_when_recording(self):
         records = [
@@ -122,11 +158,104 @@ class MetricsTest(unittest.TestCase):
         )
 
         self.assertEqual(dict(with_recording), dict(without_recording))
+        self.assertNotIn("num_examples", with_recording)
         self.assertEqual(with_recording["loss"], 2.5)
         recorder.record_clients.assert_called_once_with("evaluate", records)
-        recorder.record_round.assert_called_once_with(
-            4, "federated_validation", with_recording
-        )
+        recorder.record_round.assert_called_once()
+        args = recorder.record_round.call_args.args
+        self.assertEqual(args[:2], (4, "federated_validation"))
+        self.assertEqual(args[2]["loss"], with_recording["loss"])
+        self.assertEqual(args[2]["num_examples"], 4)
+
+    def test_federated_evaluation_records_round_loss_and_total_examples_without_changing_return(self):
+        from pytorchexample.experiment import ExperimentRecorder
+
+        records = [
+            RecordDict({"metrics": MetricRecord({
+                "client-id": 0, "server-round": 4,
+                "num-examples": 1, "loss": 1.0,
+                "confusion_matrix": [1, 0, 0, 0],
+            })}),
+            RecordDict({"metrics": MetricRecord({
+                "client-id": 1, "server-round": 4,
+                "num-examples": 3, "loss": 3.0,
+                "confusion_matrix": [0, 0, 0, 3],
+            })}),
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, ("a", "b"))
+
+            result = aggregate_evaluate_metrics(
+                records, "num-examples", class_names=("a", "b"), recorder=recorder
+            )
+
+            with open(Path(directory) / "round_metrics.csv", encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+
+        self.assertNotIn("num_examples", result)
+        self.assertEqual(rows[0]["source"], "federated_validation")
+        self.assertEqual(rows[0]["loss"], "2.5")
+        self.assertEqual(rows[0]["num_examples"], "4")
+
+    def test_global_evaluate_records_round_loss_and_support_count_without_changing_return(self):
+        from pytorchexample.experiment import ExperimentRecorder
+
+        class_names = ("a", "b")
+        metrics = {
+            "loss": 0.25,
+            "accuracy": 0.75,
+            "balanced_accuracy": 0.75,
+            "precision_macro": 0.75,
+            "recall_macro": 0.75,
+            "f1_macro": 0.75,
+            "precision_weighted": 0.75,
+            "recall_weighted": 0.75,
+            "f1_weighted": 0.75,
+            "per_class_metrics": [
+                {
+                    "class_id": 0,
+                    "class_name": "a",
+                    "support": 2,
+                    "precision": 1.0,
+                    "recall": 0.5,
+                    "f1": 2 / 3,
+                },
+                {
+                    "class_id": 1,
+                    "class_name": "b",
+                    "support": 6,
+                    "precision": 0.8,
+                    "recall": 1.0,
+                    "f1": 8 / 9,
+                },
+            ],
+            "confusion_matrix": [[1, 1], [0, 6]],
+        }
+        arrays = ArrayRecord(Net(num_classes=2).state_dict())
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = ExperimentRecorder(directory, class_names)
+
+            with (
+                patch("pytorchexample.server_app.get_dataset_spec") as dataset_spec,
+                patch("pytorchexample.server_app.load_centralized_dataset", return_value=[]),
+                patch("pytorchexample.server_app.test", return_value=metrics),
+            ):
+                dataset_spec.return_value = Mock(num_classes=2, class_names=class_names)
+                result = global_evaluate(
+                    5,
+                    arrays,
+                    dataset_name="fixture",
+                    class_names=class_names,
+                    recorder=recorder,
+                )
+
+            with open(Path(directory) / "round_metrics.csv", encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+
+        self.assertNotIn("num_examples", result)
+        self.assertEqual(rows[0]["source"], "centralized_test")
+        self.assertEqual(rows[0]["loss"], "0.25")
+        self.assertEqual(rows[0]["num_examples"], "8")
 
     def test_aggregate_metrics_reject_mixed_server_rounds(self):
         records = [
