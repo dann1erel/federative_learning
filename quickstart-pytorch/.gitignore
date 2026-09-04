@@ -12,6 +12,7 @@ build/
 dist/
 *.fab
 .pytest_cache/
+results/
 
 # Загруженные наборы данных и созданные локальные манифесты
 data/

@@ -43,6 +43,82 @@ rehash
 `~/.zshrc`, чтобы проблема не повторялась в новых терминалах. Не используйте
 для установки `sudo` или `--user`.
 
+### Записываемый эксперимент
+
+Основной способ запускать воспроизводимые эксперименты — через обёртку
+`scripts/run_experiment.py`. Она создаёт каталог результата, передаёт Flower
+эффективную конфигурацию и сохраняет манифест, окружение, консольный лог,
+сырые таблицы метрик и отчёт.
+
+```bash
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --name baseline \
+  --num-clients 10 \
+  --rounds 20 \
+  --learning-rate 0.01 \
+  --save-model
+```
+
+Для этой команды результат записывается в каталог вида
+`results/ham10000/YYYYMMDD-HHMMSS_baseline/`:
+
+```text
+results/
+└── ham10000/
+    └── YYYYMMDD-HHMMSS_baseline/
+        ├── experiment.json
+        ├── environment.json
+        ├── console.log
+        ├── round_metrics.csv
+        ├── client_metrics.csv
+        ├── per_class_metrics.csv
+        ├── client_confusion_matrices.jsonl
+        ├── final_model.pt
+        ├── summary.md
+        ├── confusion_matrices/
+        │   ├── centralized_round_000.csv
+        │   ├── centralized_round_001.csv
+        │   └── federated_round_001.csv
+        └── plots/
+            ├── learning_curves.png
+            ├── learning_curves.pdf
+            ├── client_dispersion.png
+            ├── client_dispersion.pdf
+            ├── final_per_class_metrics.png
+            ├── final_per_class_metrics.pdf
+            ├── final_confusion_matrix.png
+            ├── final_confusion_matrix.pdf
+            ├── client_class_distribution.png
+            └── client_class_distribution.pdf
+```
+
+Некоторые файлы появляются только если соответствующие данные были записаны:
+например, `final_model.pt` создаётся при `--save-model`, клиентские таблицы —
+после клиентской оценки, а имена CSV в `confusion_matrices/` зависят от
+раундов и источников метрик.
+
+Порядок применения конфигурации: значения по умолчанию из
+`pyproject.toml` < TOML-файл из `--config` < параметры командной строки.
+Ключ `experiment-dir` зарезервирован за обёрткой: в `pyproject.toml` он
+объявлен пустым, а перед запуском заменяется абсолютным путём созданного
+каталога результата.
+
+Статусы в `experiment.json`:
+
+- `running` — каталог создан, запуск ещё выполняется;
+- `completed` — обучение и построение отчёта завершились без предупреждений;
+- `completed_with_warnings` — основные сырые артефакты сохранены, но часть
+  графиков или `summary.md` не удалось построить;
+- `failed` — процесс Flower завершился с ненулевым кодом;
+- `aborted` — запуск был прерван, например `Ctrl+C`.
+
+Сырые файлы не удаляются при ошибках обучения или рендеринга отчёта. Если
+Flower упал, остаются `experiment.json`, `environment.json` и `console.log`.
+Если не построились графики или `summary.md`, уже записанные CSV, JSONL,
+матрицы и модель остаются в каталоге эксперимента, а предупреждения
+сохраняются в манифесте.
+
 ### CIFAR-10
 
 По умолчанию приложение загружает CIFAR-10 (`uoft-cs/cifar10`) через Hugging

@@ -10,6 +10,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover
+    import tomli as tomllib
+
 from scripts.run_experiment import (
     _run_lifecycle,
     build_flwr_command,
@@ -22,6 +27,11 @@ from scripts.run_experiment import (
     parse_args,
     run_and_capture,
 )
+
+
+def load_toml(path: Path) -> dict[str, object]:
+    with path.open("rb") as handle:
+        return tomllib.load(handle)
 
 
 def _read_pid(path: Path) -> int | None:
@@ -70,6 +80,15 @@ class _ExplodingStdout:
 
 
 class RunnerConfigurationTests(unittest.TestCase):
+    def test_project_declares_recording_configuration_and_dependencies(self):
+        root = Path(__file__).resolve().parents[1]
+        project = load_toml(root / "pyproject.toml")
+        dependencies = project["project"]["dependencies"]
+        self.assertTrue(any(value.startswith("matplotlib>=") for value in dependencies))
+        self.assertTrue(any(value.startswith("tomli>=") for value in dependencies))
+        self.assertEqual(project["tool"]["flwr"]["app"]["config"]["experiment-dir"], "")
+        self.assertIn("results/", (root / ".gitignore").read_text(encoding="utf-8"))
+
     def test_loads_real_project_defaults(self):
         root = Path(__file__).resolve().parents[1]
 
