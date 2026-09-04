@@ -386,6 +386,39 @@ class RunnerCliTests(unittest.TestCase):
             self.assertIn("finished_at", manifest)
             self.assertIn("duration_seconds", manifest)
 
+    def test_main_prints_result_path_when_manifest_read_is_interrupted_after_child_exit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workdir = Path(directory)
+            results_root = workdir / "results"
+            output = io.StringIO()
+            self._write_fake_flwr(workdir / "flwr", exit_code=0)
+            existing_path = os.environ.get("PATH", "")
+            patched_path = str(workdir) if not existing_path else f"{workdir}:{existing_path}"
+
+            with patch.dict(os.environ, {"PATH": patched_path}, clear=False):
+                with patch("scripts.run_experiment.read_json", side_effect=KeyboardInterrupt):
+                    with patch("scripts.run_experiment.sys.stdout", new=output):
+                        try:
+                            result = main(
+                                ["--results-root", str(results_root), "--num-clients", "2"]
+                            )
+                        except KeyboardInterrupt:
+                            result = "raised"
+
+            stdout_lines = output.getvalue().strip().splitlines()
+            self.assertEqual(result, 130)
+            self.assertTrue(stdout_lines, output.getvalue())
+            experiment_dir = Path(stdout_lines[-1])
+            manifest = json.loads((experiment_dir / "experiment.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["status"], "aborted")
+            self.assertEqual(manifest["exit_code"], 130)
+            self.assertIn("finished_at", manifest)
+            self.assertIn("duration_seconds", manifest)
+            self.assertEqual(
+                (experiment_dir / "console.log").read_text(encoding="utf-8").strip(),
+                "fake flwr completed",
+            )
+
     def _run_script(self, fake_flwr_dir: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
         root = Path(__file__).resolve().parents[1]
         environment = os.environ.copy()

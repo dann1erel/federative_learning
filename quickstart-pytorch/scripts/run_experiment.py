@@ -272,6 +272,8 @@ def _run_lifecycle(
 ) -> int:
     """Initialize, execute, and finalize one already-allocated experiment."""
     started_at = datetime.now(timezone.utc)
+    manifest_path = Path(experiment_dir) / "experiment.json"
+    manifest_preexisted = manifest_path.exists()
     metadata: dict[str, object] = {
         "experiment_id": Path(experiment_dir).name,
         "status": "running",
@@ -281,29 +283,31 @@ def _run_lifecycle(
     }
     if name is not None:
         metadata["name"] = name
-    initialize_experiment(experiment_dir, metadata)
 
     try:
+        initialize_experiment(experiment_dir, metadata)
         atomic_write_json(
             Path(experiment_dir) / "environment.json",
             collect_environment(command, project_root),
         )
         exit_code = run_and_capture(command, project_root, Path(experiment_dir) / "console.log")
+        previous_status = read_json(manifest_path).get("status")
+        status = "failed" if exit_code else (
+            "completed_with_warnings"
+            if previous_status == "completed_with_warnings"
+            else "completed"
+        )
+        _finalize_lifecycle(experiment_dir, started_at, status, exit_code)
+        return exit_code
     except KeyboardInterrupt:
-        _finalize_lifecycle(experiment_dir, started_at, "aborted", 130)
-        return 130
-    except Exception:
-        _finalize_lifecycle(experiment_dir, started_at, "failed", 1)
+        if _manifest_created_by_run(manifest_path, manifest_preexisted):
+            _best_effort_finalize(experiment_dir, started_at, "aborted", 130)
+            return 130
         raise
-
-    previous_status = read_json(Path(experiment_dir) / "experiment.json").get("status")
-    status = "failed" if exit_code else (
-        "completed_with_warnings"
-        if previous_status == "completed_with_warnings"
-        else "completed"
-    )
-    _finalize_lifecycle(experiment_dir, started_at, status, exit_code)
-    return exit_code
+    except Exception:
+        if _manifest_created_by_run(manifest_path, manifest_preexisted):
+            _best_effort_finalize(experiment_dir, started_at, "failed", 1)
+        raise
 
 
 def _add_config_override(
@@ -440,6 +444,19 @@ def _finalize_lifecycle(
             "exit_code": exit_code,
         },
     )
+
+
+def _manifest_created_by_run(manifest_path: Path, manifest_preexisted: bool) -> bool:
+    return not manifest_preexisted and manifest_path.exists()
+
+
+def _best_effort_finalize(
+    experiment_dir: Path, started_at: datetime, status: str, exit_code: int
+) -> None:
+    try:
+        _finalize_lifecycle(experiment_dir, started_at, status, exit_code)
+    except BaseException:
+        return
 
 
 def _validated_flat_mapping(
