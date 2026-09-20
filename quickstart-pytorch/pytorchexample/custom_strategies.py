@@ -117,3 +117,134 @@ class FedNovaStrategy(FedAvg):
             ),
             self.train_metrics_aggr_fn(contents, self.weighted_by_key),
         )
+
+
+def _numpy_arrays(record: ArrayRecord) -> dict[str, np.ndarray]:
+    return {name: value.numpy() for name, value in record.items()}
+
+
+def _validate_array_structure(
+    reference: dict[str, np.ndarray], candidate: ArrayRecord, label: str
+) -> dict[str, np.ndarray]:
+    values = _numpy_arrays(candidate)
+    if tuple(values) != tuple(reference):
+        raise ValueError(f"{label} array structure does not match")
+    if any(values[name].shape != reference[name].shape for name in reference):
+        raise ValueError(f"{label} array structure does not match")
+    return values
+
+
+def _array_record(values: dict[str, np.ndarray]) -> ArrayRecord:
+    return ArrayRecord({name: Array(value) for name, value in values.items()})
+
+
+def aggregate_scaffold(
+    global_arrays: ArrayRecord,
+    server_control: ArrayRecord,
+    records: list[RecordDict],
+    total_clients: int,
+    server_learning_rate: float,
+) -> tuple[ArrayRecord, ArrayRecord]:
+    """Apply the SCAFFOLD model and global-control updates."""
+    if not records:
+        raise ValueError("SCAFFOLD aggregation requires at least one reply")
+    if total_clients < len(records) or total_clients <= 0:
+        raise ValueError("total_clients must cover all participating clients")
+    if not math.isfinite(server_learning_rate) or server_learning_rate <= 0:
+        raise ValueError("server_learning_rate must be finite and positive")
+
+    global_values = _numpy_arrays(global_arrays)
+    control_values = _validate_array_structure(
+        global_values, server_control, "server control"
+    )
+    local_models: list[dict[str, np.ndarray]] = []
+    control_deltas: list[dict[str, np.ndarray]] = []
+    for record in records:
+        model_record = record.get("arrays")
+        if not isinstance(model_record, ArrayRecord):
+            raise ValueError("SCAFFOLD reply is missing arrays")
+        delta_record = record.get("scaffold-control-delta")
+        if not isinstance(delta_record, ArrayRecord):
+            raise ValueError("SCAFFOLD reply is missing scaffold-control-delta")
+        local_models.append(
+            _validate_array_structure(global_values, model_record, "client model")
+        )
+        control_deltas.append(
+            _validate_array_structure(
+                control_values, delta_record, "client control delta"
+            )
+        )
+
+    next_model: dict[str, np.ndarray] = {}
+    next_control: dict[str, np.ndarray] = {}
+    participants = len(records)
+    for name, global_value in global_values.items():
+        mean_delta = sum(
+            (local[name] - global_value) / participants for local in local_models
+        )
+        model_value = global_value + server_learning_rate * mean_delta
+        control_value = control_values[name] + sum(
+            delta[name] / total_clients for delta in control_deltas
+        )
+        if np.issubdtype(global_value.dtype, np.integer):
+            model_value = np.rint(model_value)
+            control_value = np.rint(control_value)
+        next_model[name] = np.asarray(model_value, dtype=global_value.dtype)
+        next_control[name] = np.asarray(control_value, dtype=global_value.dtype)
+    return _array_record(next_model), _array_record(next_control)
+
+
+class ScaffoldStrategy(FedAvg):
+    """Stateful SCAFFOLD server strategy for Flower's Message API."""
+
+    def __init__(self, *, server_learning_rate: float, **kwargs):
+        super().__init__(**kwargs)
+        self.server_learning_rate = server_learning_rate
+        self._current_global_arrays: ArrayRecord | None = None
+        self._server_control: ArrayRecord | None = None
+        self._total_clients = 0
+
+    def configure_train(
+        self,
+        server_round: int,
+        arrays: ArrayRecord,
+        config: ConfigRecord,
+        grid: Grid,
+    ) -> Iterable[Message]:
+        self._total_clients = len(list(grid.get_node_ids()))
+        self._current_global_arrays = _array_record(
+            {name: value.numpy().copy() for name, value in arrays.items()}
+        )
+        if self._server_control is None:
+            self._server_control = _array_record(
+                {
+                    name: np.zeros_like(value.numpy())
+                    for name, value in arrays.items()
+                }
+            )
+        messages = list(super().configure_train(server_round, arrays, config, grid))
+        for message in messages:
+            message.content["scaffold-server-control"] = self._server_control
+        return messages
+
+    def aggregate_train(
+        self, server_round: int, replies: Iterable[Message]
+    ) -> tuple[ArrayRecord | None, MetricRecord | None]:
+        del server_round
+        valid_replies, _ = self._check_and_log_replies(
+            replies, is_train=True, validate=False
+        )
+        if not valid_replies:
+            return None, None
+        if self._current_global_arrays is None or self._server_control is None:
+            raise RuntimeError("SCAFFOLD has no server state for this round")
+        contents = [message.content for message in valid_replies]
+        next_model, next_control = aggregate_scaffold(
+            self._current_global_arrays,
+            self._server_control,
+            contents,
+            self._total_clients,
+            self.server_learning_rate,
+        )
+        self._server_control = next_control
+        return next_model, self.train_metrics_aggr_fn(contents, self.weighted_by_key)

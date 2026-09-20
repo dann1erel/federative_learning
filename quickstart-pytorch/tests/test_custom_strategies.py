@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from flwr.app import Array, ArrayRecord, MetricRecord, RecordDict
 
-from pytorchexample.custom_strategies import aggregate_fednova
+from pytorchexample.custom_strategies import aggregate_fednova, aggregate_scaffold
 from pytorchexample.local_training import fednova_normalizer
 
 
@@ -76,6 +76,61 @@ class FedNovaTests(unittest.TestCase):
                         [reply(local, examples=1, normalizer=1.0)],
                         "num-examples",
                     )
+
+
+class ScaffoldServerTests(unittest.TestCase):
+    def test_model_and_control_updates_follow_scaffold_scaling(self):
+        records = [
+            RecordDict(
+                {
+                    "arrays": arrays(w=[2.0]),
+                    "scaffold-control-delta": arrays(w=[4.0]),
+                    "metrics": MetricRecord({"num-examples": 1}),
+                }
+            ),
+            RecordDict(
+                {
+                    "arrays": arrays(w=[6.0]),
+                    "scaffold-control-delta": arrays(w=[8.0]),
+                    "metrics": MetricRecord({"num-examples": 9}),
+                }
+            ),
+        ]
+
+        model, control = aggregate_scaffold(
+            arrays(w=[0.0]),
+            arrays(w=[1.0]),
+            records,
+            total_clients=4,
+            server_learning_rate=0.5,
+        )
+
+        self.assertAlmostEqual(float(model["w"].numpy()[0]), 2.0)
+        self.assertAlmostEqual(float(control["w"].numpy()[0]), 4.0)
+
+    def test_scaffold_rejects_missing_or_mismatched_controls(self):
+        missing = RecordDict(
+            {
+                "arrays": arrays(w=[1.0]),
+                "metrics": MetricRecord({"num-examples": 1}),
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "scaffold-control-delta"):
+            aggregate_scaffold(
+                arrays(w=[0.0]), arrays(w=[0.0]), [missing], 1, 1.0
+            )
+
+        mismatched = RecordDict(
+            {
+                "arrays": arrays(w=[1.0]),
+                "scaffold-control-delta": arrays(other=[1.0]),
+                "metrics": MetricRecord({"num-examples": 1}),
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "structure"):
+            aggregate_scaffold(
+                arrays(w=[0.0]), arrays(w=[0.0]), [mismatched], 1, 1.0
+            )
 
 
 if __name__ == "__main__":

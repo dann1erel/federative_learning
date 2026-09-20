@@ -2,7 +2,7 @@ import copy
 import unittest
 
 import torch
-from flwr.app import ConfigRecord, RecordDict
+from flwr.app import ArrayRecord, ConfigRecord, RecordDict
 
 from pytorchexample.local_training import (
     LocalTrainingRequest,
@@ -60,6 +60,130 @@ class LocalTrainingTests(unittest.TestCase):
         self.assertEqual(result.local_steps, 4)
         self.assertEqual(result.extra_metrics["local_steps"], 4)
         self.assertAlmostEqual(result.extra_metrics["local_normalizer"], 6.125)
+
+    def test_scaffold_corrects_gradient_and_computes_option_two_control(self):
+        model = torch.nn.Linear(1, 2, bias=False)
+        with torch.no_grad():
+            model.weight.zero_()
+        server_control = ArrayRecord(
+            {"weight": torch.tensor([[0.2], [-0.1]])}
+        )
+        client_control = ArrayRecord(
+            {"weight": torch.tensor([[0.05], [0.1]])}
+        )
+        state = {"scaffold-client-control": client_control}
+        incoming = RecordDict(
+            {
+                "config": ConfigRecord({}),
+                "scaffold-server-control": server_control,
+            }
+        )
+
+        result = get_local_training_algorithm("scaffold").train(
+            self._request(
+                model,
+                [{"img": torch.tensor([[1.0]]), "label": torch.tensor([0])}],
+                learning_rate=0.1,
+                local_momentum=0.9,
+                incoming=incoming,
+                client_state=state,
+            )
+        )
+
+        expected_local = torch.tensor([[0.035], [-0.03]])
+        self.assertTrue(torch.allclose(model.weight, expected_local, atol=1e-6))
+        expected_control = (
+            client_control.to_torch_state_dict()["weight"]
+            - server_control.to_torch_state_dict()["weight"]
+            + (torch.zeros_like(expected_local) - expected_local) / 0.1
+        )
+        next_control = result.state_updates[
+            "scaffold-client-control"
+        ].to_torch_state_dict()["weight"]
+        self.assertTrue(torch.allclose(next_control, expected_control, atol=1e-6))
+        delta = result.extra_records[
+            "scaffold-control-delta"
+        ].to_torch_state_dict()["weight"]
+        self.assertTrue(
+            torch.allclose(
+                delta,
+                expected_control - client_control.to_torch_state_dict()["weight"],
+                atol=1e-6,
+            )
+        )
+        self.assertEqual(result.local_steps, 1)
+
+    def test_scaffold_client_control_is_reused_but_isolated_by_state(self):
+        incoming = RecordDict(
+            {
+                "config": ConfigRecord({}),
+                "scaffold-server-control": ArrayRecord(
+                    {"weight": torch.tensor([[0.1], [-0.1]])}
+                ),
+            }
+        )
+        batch = [{"img": torch.tensor([[1.0]]), "label": torch.tensor([0])}]
+        base_model = torch.nn.Linear(1, 2, bias=False)
+        first_state = {}
+        first = get_local_training_algorithm("scaffold").train(
+            self._request(
+                copy.deepcopy(base_model),
+                batch,
+                incoming=incoming,
+                client_state=first_state,
+            )
+        )
+        first_state.update(first.state_updates)
+        second = get_local_training_algorithm("scaffold").train(
+            self._request(
+                copy.deepcopy(base_model),
+                batch,
+                incoming=incoming,
+                client_state=first_state,
+            )
+        )
+        isolated = get_local_training_algorithm("scaffold").train(
+            self._request(
+                copy.deepcopy(base_model),
+                batch,
+                incoming=incoming,
+                client_state={},
+            )
+        )
+
+        self.assertFalse(
+            torch.allclose(
+                second.extra_records[
+                    "scaffold-control-delta"
+                ].to_torch_state_dict()["weight"],
+                isolated.extra_records[
+                    "scaffold-control-delta"
+                ].to_torch_state_dict()["weight"],
+            )
+        )
+
+    def test_scaffold_rejects_missing_control_and_zero_steps(self):
+        algorithm = get_local_training_algorithm("scaffold")
+        with self.assertRaisesRegex(ValueError, "scaffold-server-control"):
+            algorithm.train(self._request(torch.nn.Linear(1, 2), []))
+        with self.assertRaisesRegex(ValueError, "at least one batch"):
+            algorithm.train(
+                self._request(
+                    torch.nn.Linear(1, 2),
+                    [],
+                    incoming=RecordDict(
+                        {
+                            "config": ConfigRecord({}),
+                            "scaffold-server-control": ArrayRecord(
+                                {
+                                    "weight": torch.zeros(2, 1),
+                                    "bias": torch.zeros(2),
+                                }
+                            ),
+                        }
+                    ),
+                )
+            )
 
     def test_proximal_penalty_uses_squared_parameter_distance(self):
         model = torch.nn.Linear(1, 1, bias=False)

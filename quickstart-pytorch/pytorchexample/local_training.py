@@ -128,10 +128,128 @@ class FedNovaTraining:
                 ),
             },
         )
+
+
+def _control_tensors(
+    record: object,
+    parameters: Mapping[str, torch.nn.Parameter],
+    *,
+    label: str,
+) -> dict[str, torch.Tensor]:
+    if not isinstance(record, ArrayRecord):
+        raise ValueError(f"{label} must be an ArrayRecord")
+    tensors = record.to_torch_state_dict()
+    if tuple(tensors) != tuple(parameters):
+        raise ValueError(f"{label} structure must match model parameters")
+    for name, parameter in parameters.items():
+        if tensors[name].shape != parameter.shape:
+            raise ValueError(f"{label} structure must match model parameters")
+    return {
+        name: tensors[name].to(device=parameter.device, dtype=parameter.dtype)
+        for name, parameter in parameters.items()
+    }
+
+
+class ScaffoldTraining:
+    name = "scaffold"
+
+    def train(self, request: LocalTrainingRequest) -> LocalTrainingResult:
+        server_record = request.incoming.get("scaffold-server-control")
+        if server_record is None:
+            raise ValueError("SCAFFOLD requires scaffold-server-control")
+
+        request.model.to(request.device)
+        parameters = dict(request.model.named_parameters())
+        server_control = _control_tensors(
+            server_record, parameters, label="scaffold-server-control"
+        )
+        client_record = request.client_state.get("scaffold-client-control")
+        client_control = (
+            {
+                name: torch.zeros_like(parameter)
+                for name, parameter in parameters.items()
+            }
+            if client_record is None
+            else _control_tensors(
+                client_record, parameters, label="scaffold-client-control"
+            )
+        )
+        global_parameters = {
+            name: parameter.detach().clone()
+            for name, parameter in parameters.items()
+        }
+        weights = (
+            request.class_weights.to(request.device)
+            if request.class_weights is not None
+            else None
+        )
+        criterion = torch.nn.CrossEntropyLoss(weight=weights).to(request.device)
+        optimizer = torch.optim.SGD(
+            request.model.parameters(), lr=request.learning_rate, momentum=0.0
+        )
+        request.model.train()
+        running_loss = 0.0
+        local_steps = 0
+        for _ in range(request.epochs):
+            for batch in request.trainloader:
+                images = batch["img"].to(request.device)
+                labels = batch["label"].to(request.device)
+                optimizer.zero_grad()
+                loss = criterion(request.model(images), labels)
+                loss.backward()
+                for name, parameter in parameters.items():
+                    if parameter.grad is None:
+                        raise ValueError(f"parameter {name!r} has no local gradient")
+                    parameter.grad.add_(server_control[name] - client_control[name])
+                optimizer.step()
+                running_loss += loss.item()
+                local_steps += 1
+
+        if local_steps == 0:
+            raise ValueError("local training requires at least one batch")
+        scale = local_steps * request.learning_rate
+        next_control = {
+            name: (
+                client_control[name]
+                - server_control[name]
+                + (global_parameters[name] - parameter.detach()) / scale
+            )
+            for name, parameter in parameters.items()
+        }
+        control_delta = {
+            name: next_control[name] - client_control[name]
+            for name in parameters
+        }
+        return LocalTrainingResult(
+            train_loss=running_loss / local_steps,
+            local_steps=local_steps,
+            extra_metrics={
+                "objective_loss": running_loss / local_steps,
+                "regularization_loss": 0.0,
+                "local_steps": local_steps,
+            },
+            extra_records={
+                "scaffold-control-delta": ArrayRecord(
+                    {
+                        name: value.detach().cpu()
+                        for name, value in control_delta.items()
+                    }
+                )
+            },
+            state_updates={
+                "scaffold-client-control": ArrayRecord(
+                    {
+                        name: value.detach().cpu()
+                        for name, value in next_control.items()
+                    }
+                )
+            },
+        )
 LOCAL_TRAINING_ALGORITHMS: dict[str, LocalTrainingAlgorithm] = {
     "standard": StandardTraining(),
     "fedprox": FedProxTraining(),
     "fednova": FedNovaTraining(),
+    "scaffold": ScaffoldTraining(),
 }
 
 

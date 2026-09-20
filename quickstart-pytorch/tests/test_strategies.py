@@ -16,7 +16,7 @@ from pytorchexample.strategies import (
     create_strategy,
     validate_strategy_config,
 )
-from pytorchexample.custom_strategies import FedNovaStrategy
+from pytorchexample.custom_strategies import FedNovaStrategy, ScaffoldStrategy
 
 
 class StrategyRegistryTests(unittest.TestCase):
@@ -33,6 +33,7 @@ class StrategyRegistryTests(unittest.TestCase):
             "fedopt-beta-1": 0.9,
             "fedopt-beta-2": 0.99,
             "fedopt-tau": 0.001,
+            "scaffold-server-learning-rate": 1.0,
         }
         self.train_metrics = Mock()
         self.evaluate_metrics = Mock()
@@ -53,6 +54,7 @@ class StrategyRegistryTests(unittest.TestCase):
             "fedyogi": FedYogi,
             "fedadagrad": FedAdagrad,
             "fednova": FedNovaStrategy,
+            "scaffold": ScaffoldStrategy,
         }
 
         for name, expected_type in expected.items():
@@ -127,6 +129,11 @@ class StrategyRegistryTests(unittest.TestCase):
             active_strategy_config({**self.config, "strategy": "fednova"}),
             {"local-momentum": 0.9},
         )
+        self.assertEqual(client_algorithm_for_strategy("scaffold"), "scaffold")
+        self.assertEqual(
+            active_strategy_config({**self.config, "strategy": "scaffold"}),
+            {"server-learning-rate": 1.0, "local-momentum": 0.0},
+        )
 
     def test_validation_rejects_unknown_strategy_and_invalid_parameters(self):
         with self.assertRaisesRegex(ValueError, "fedyogi"):
@@ -146,6 +153,14 @@ class StrategyRegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fedopt-eta"):
             validate_strategy_config(
                 {**self.config, "strategy": "fedadam", "fedopt-eta": float("nan")}
+            )
+        with self.assertRaisesRegex(ValueError, "scaffold-server-learning-rate"):
+            validate_strategy_config(
+                {
+                    **self.config,
+                    "strategy": "scaffold",
+                    "scaffold-server-learning-rate": 0.0,
+                }
             )
 
 

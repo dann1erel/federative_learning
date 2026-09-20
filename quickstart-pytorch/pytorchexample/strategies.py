@@ -18,7 +18,7 @@ from flwr.serverapp.strategy import (
     Strategy,
 )
 
-from pytorchexample.custom_strategies import FedNovaStrategy
+from pytorchexample.custom_strategies import FedNovaStrategy, ScaffoldStrategy
 
 
 StrategyBuilder = Callable[[Mapping[str, Scalar], dict[str, Any]], Strategy]
@@ -71,6 +71,15 @@ def _fednova(_: Mapping[str, Scalar], common: dict[str, Any]) -> FedNovaStrategy
     return FedNovaStrategy(**common)
 
 
+def _scaffold(
+    config: Mapping[str, Scalar], common: dict[str, Any]
+) -> ScaffoldStrategy:
+    return ScaffoldStrategy(
+        server_learning_rate=float(config["scaffold-server-learning-rate"]),
+        **common,
+    )
+
+
 def _build_fedopt_kwargs(
     config: Mapping[str, Scalar], *, include_betas: bool
 ) -> dict[str, float]:
@@ -112,6 +121,10 @@ def _validate_fedadam(config: Mapping[str, Scalar]) -> None:
 def _validate_fedadagrad(config: Mapping[str, Scalar]) -> None:
     _positive_number(config, "fedopt-eta")
     _positive_number(config, "fedopt-tau")
+
+
+def _validate_scaffold(config: Mapping[str, Scalar]) -> None:
+    _positive_number(config, "scaffold-server-learning-rate")
 
 
 def _fedopt_active_config(
@@ -187,6 +200,18 @@ STRATEGIES: dict[str, StrategyDefinition] = {
         _fednova,
         _validate_fedavg,
         lambda config: {"local-momentum": float(config["local-momentum"])},
+    ),
+    "scaffold": StrategyDefinition(
+        "scaffold",
+        "scaffold",
+        _scaffold,
+        _validate_scaffold,
+        lambda config: {
+            "server-learning-rate": float(
+                config["scaffold-server-learning-rate"]
+            ),
+            "local-momentum": 0.0,
+        },
     ),
 }
 

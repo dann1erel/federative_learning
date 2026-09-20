@@ -252,6 +252,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     _add_config_override(parser, "--fedopt-beta-1", "fedopt_beta_1", type=float)
     _add_config_override(parser, "--fedopt-beta-2", "fedopt_beta_2", type=float)
     _add_config_override(parser, "--fedopt-tau", "fedopt_tau", type=float)
+    _add_config_override(
+        parser,
+        "--scaffold-server-learning-rate",
+        "scaffold_server_learning_rate",
+        type=float,
+    )
     parser.add_argument("--num-clients", type=int, required=True)
     model_group = parser.add_mutually_exclusive_group()
     model_group.add_argument(
@@ -375,6 +381,7 @@ def _cli_config_values(args: argparse.Namespace) -> dict[str, Scalar]:
         "fedopt_beta_1": "fedopt-beta-1",
         "fedopt_beta_2": "fedopt-beta-2",
         "fedopt_tau": "fedopt-tau",
+        "scaffold_server_learning_rate": "scaffold-server-learning-rate",
         "save_model": "save-model",
     }
     return {
