@@ -140,6 +140,30 @@ class MetricsTest(unittest.TestCase):
         self.assertEqual(args[2]["train_loss"], result["train_loss"])
         self.assertEqual(args[2]["num_examples"], 4)
 
+    def test_fednova_protocol_metrics_are_not_quality_metrics(self):
+        records = [
+            RecordDict(
+                {
+                    "metrics": MetricRecord(
+                        {
+                            "client-id": 0,
+                            "server-round": 1,
+                            "num-examples": 2,
+                            "train_loss": 1.0,
+                            "local_steps": 3,
+                            "local_normalizer": 4.25,
+                        }
+                    )
+                }
+            )
+        ]
+
+        result = aggregate_train_metrics(records, "num-examples")
+
+        self.assertEqual(result["train_loss"], 1.0)
+        self.assertNotIn("local_steps", result)
+        self.assertNotIn("local_normalizer", result)
+
     def test_train_aggregation_records_round_loss_and_example_count_without_changing_return(self):
         from pytorchexample.experiment import ExperimentRecorder
 

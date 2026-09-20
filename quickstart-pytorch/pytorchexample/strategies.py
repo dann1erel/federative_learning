@@ -18,6 +18,8 @@ from flwr.serverapp.strategy import (
     Strategy,
 )
 
+from pytorchexample.custom_strategies import FedNovaStrategy
+
 
 StrategyBuilder = Callable[[Mapping[str, Scalar], dict[str, Any]], Strategy]
 ActiveConfigBuilder = Callable[[Mapping[str, Scalar]], dict[str, float]]
@@ -63,6 +65,10 @@ def _fedadagrad(
     config: Mapping[str, Scalar], common: dict[str, Any]
 ) -> FedAdagrad:
     return FedAdagrad(**_build_fedopt_kwargs(config, include_betas=False), **common)
+
+
+def _fednova(_: Mapping[str, Scalar], common: dict[str, Any]) -> FedNovaStrategy:
+    return FedNovaStrategy(**common)
 
 
 def _build_fedopt_kwargs(
@@ -174,6 +180,13 @@ STRATEGIES: dict[str, StrategyDefinition] = {
         _fedadagrad,
         _validate_fedadagrad,
         lambda config: _fedopt_active_config(config, include_betas=False),
+    ),
+    "fednova": StrategyDefinition(
+        "fednova",
+        "fednova",
+        _fednova,
+        _validate_fedavg,
+        lambda config: {"local-momentum": float(config["local-momentum"])},
     ),
 }
 

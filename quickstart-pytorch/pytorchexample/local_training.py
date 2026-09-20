@@ -94,9 +94,44 @@ class FedProxTraining:
         )
 
 
+def fednova_normalizer(local_steps: int, momentum: float) -> float:
+    """Return the cumulative local-SGD coefficient used by FedNova."""
+    if (
+        isinstance(local_steps, bool)
+        or not isinstance(local_steps, int)
+        or local_steps <= 0
+    ):
+        raise ValueError("local_steps must be a positive integer")
+    if not math.isfinite(momentum) or not 0 <= momentum < 1:
+        raise ValueError("momentum must be finite and in [0, 1)")
+    coefficient = 0.0
+    normalizer = 0.0
+    for _ in range(local_steps):
+        coefficient = momentum * coefficient + 1.0
+        normalizer += coefficient
+    return normalizer
+
+
+class FedNovaTraining:
+    name = "fednova"
+
+    def train(self, request: LocalTrainingRequest) -> LocalTrainingResult:
+        result = _train_with_regularizer(request)
+        return LocalTrainingResult(
+            train_loss=result.train_loss,
+            local_steps=result.local_steps,
+            extra_metrics={
+                **result.extra_metrics,
+                "local_steps": result.local_steps,
+                "local_normalizer": fednova_normalizer(
+                    result.local_steps, request.local_momentum
+                ),
+            },
+        )
 LOCAL_TRAINING_ALGORITHMS: dict[str, LocalTrainingAlgorithm] = {
     "standard": StandardTraining(),
     "fedprox": FedProxTraining(),
+    "fednova": FedNovaTraining(),
 }
 
 

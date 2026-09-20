@@ -45,6 +45,22 @@ class LocalTrainingTests(unittest.TestCase):
                 self._request(torch.nn.Linear(1, 2), [])
             )
 
+    def test_fednova_reports_real_steps_and_momentum_normalizer(self):
+        batches = [
+            {"img": torch.tensor([[1.0]]), "label": torch.tensor([1])},
+            {"img": torch.tensor([[2.0]]), "label": torch.tensor([0])},
+        ]
+
+        result = get_local_training_algorithm("fednova").train(
+            self._request(
+                torch.nn.Linear(1, 2), batches, epochs=2, local_momentum=0.5
+            )
+        )
+
+        self.assertEqual(result.local_steps, 4)
+        self.assertEqual(result.extra_metrics["local_steps"], 4)
+        self.assertAlmostEqual(result.extra_metrics["local_normalizer"], 6.125)
+
     def test_proximal_penalty_uses_squared_parameter_distance(self):
         model = torch.nn.Linear(1, 1, bias=False)
         with torch.no_grad():

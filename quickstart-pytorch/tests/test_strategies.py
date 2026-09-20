@@ -16,6 +16,7 @@ from pytorchexample.strategies import (
     create_strategy,
     validate_strategy_config,
 )
+from pytorchexample.custom_strategies import FedNovaStrategy
 
 
 class StrategyRegistryTests(unittest.TestCase):
@@ -51,6 +52,7 @@ class StrategyRegistryTests(unittest.TestCase):
             "fedadam": FedAdam,
             "fedyogi": FedYogi,
             "fedadagrad": FedAdagrad,
+            "fednova": FedNovaStrategy,
         }
 
         for name, expected_type in expected.items():
@@ -120,6 +122,11 @@ class StrategyRegistryTests(unittest.TestCase):
         self.assertEqual(client_algorithm_for_strategy("fedadam"), "standard")
         self.assertEqual(client_algorithm_for_strategy("fedyogi"), "standard")
         self.assertEqual(client_algorithm_for_strategy("fedadagrad"), "standard")
+        self.assertEqual(client_algorithm_for_strategy("fednova"), "fednova")
+        self.assertEqual(
+            active_strategy_config({**self.config, "strategy": "fednova"}),
+            {"local-momentum": 0.9},
+        )
 
     def test_validation_rejects_unknown_strategy_and_invalid_parameters(self):
         with self.assertRaisesRegex(ValueError, "fedyogi"):

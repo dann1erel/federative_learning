@@ -132,7 +132,13 @@ def aggregate_train_metrics(
         float(metrics[weighting_metric_name]) for metrics in client_metrics
     )
     aggregate = MetricRecord()
-    excluded_metrics = {"client-id", "server-round", weighting_metric_name}
+    excluded_metrics = {
+        "client-id",
+        "server-round",
+        weighting_metric_name,
+        "local_steps",
+        "local_normalizer",
+    }
     if total_weight:
         for metrics in client_metrics:
             weight = float(metrics[weighting_metric_name]) / total_weight
