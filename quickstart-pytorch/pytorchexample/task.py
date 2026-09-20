@@ -118,14 +118,16 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, num_classes)
 
-    def forward(self, x):
+    def forward_features(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = self.adaptive_pool(x)
         x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return self.fc3(x)
+        return F.relu(self.fc2(x))
+
+    def forward(self, x):
+        return self.fc3(self.forward_features(x))
 
 
 # Процесс клиента может отдельно запрашивать загрузчики обучающей и валидационной

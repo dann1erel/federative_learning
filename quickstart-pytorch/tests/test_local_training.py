@@ -2,14 +2,49 @@ import copy
 import unittest
 
 import torch
+from flwr.app import ConfigRecord, RecordDict
 
 from pytorchexample.local_training import (
+    LocalTrainingRequest,
     get_local_training_algorithm,
     proximal_penalty,
 )
 
 
 class LocalTrainingTests(unittest.TestCase):
+    def _request(self, model, batches, **overrides):
+        values = {
+            "model": model,
+            "trainloader": batches,
+            "epochs": 1,
+            "learning_rate": 0.1,
+            "local_momentum": 0.4,
+            "device": torch.device("cpu"),
+            "class_weights": None,
+            "incoming": RecordDict({"config": ConfigRecord({})}),
+            "client_state": {},
+        }
+        values.update(overrides)
+        return LocalTrainingRequest(**values)
+
+    def test_standard_training_reports_completed_optimizer_steps(self):
+        batches = [
+            {"img": torch.tensor([[1.0]]), "label": torch.tensor([1])},
+            {"img": torch.tensor([[2.0]]), "label": torch.tensor([0])},
+        ]
+
+        result = get_local_training_algorithm("standard").train(
+            self._request(torch.nn.Linear(1, 2), batches, epochs=3)
+        )
+
+        self.assertEqual(result.local_steps, 6)
+
+    def test_standard_training_rejects_zero_completed_steps(self):
+        with self.assertRaisesRegex(ValueError, "at least one batch"):
+            get_local_training_algorithm("standard").train(
+                self._request(torch.nn.Linear(1, 2), [])
+            )
+
     def test_proximal_penalty_uses_squared_parameter_distance(self):
         model = torch.nn.Linear(1, 1, bias=False)
         with torch.no_grad():
@@ -33,15 +68,7 @@ class LocalTrainingTests(unittest.TestCase):
         batches = [{"img": torch.tensor([[1.0]]), "label": torch.tensor([1])}]
 
         with self.assertRaisesRegex(ValueError, "proximal-mu"):
-            algorithm.train(
-                model,
-                batches,
-                epochs=1,
-                learning_rate=0.1,
-                device=torch.device("cpu"),
-                class_weights=None,
-                config={},
-            )
+            algorithm.train(self._request(model, batches))
 
     def test_fedprox_limits_distance_from_received_global_model(self):
         base = torch.nn.Linear(1, 2)
@@ -61,13 +88,11 @@ class LocalTrainingTests(unittest.TestCase):
             model = copy.deepcopy(base)
             initial = tuple(parameter.detach().clone() for parameter in model.parameters())
             result = get_local_training_algorithm(name).train(
-                model,
-                batches,
-                epochs=1,
-                learning_rate=0.1,
-                device=torch.device("cpu"),
-                class_weights=None,
-                config=config,
+                self._request(
+                    model,
+                    batches,
+                    incoming=RecordDict({"config": ConfigRecord(config)}),
+                )
             )
             distances[name] = sum(
                 torch.sum((parameter - reference) ** 2)

@@ -105,6 +105,7 @@ class RunnerConfigurationTests(unittest.TestCase):
         self.assertEqual(defaults["num-server-rounds"], 3)
         self.assertFalse(defaults["save-model"])
         self.assertEqual(defaults["strategy"], "fedavg")
+        self.assertEqual(defaults["local-momentum"], 0.9)
 
     def test_load_override_file_returns_empty_mapping_for_none(self):
         self.assertEqual(load_override_file(None), {})
@@ -375,6 +376,13 @@ class RunnerProcessTests(unittest.TestCase):
 
 
 class RunnerCliTests(unittest.TestCase):
+    def test_parse_args_accepts_local_momentum_override(self):
+        args = parse_args(
+            ["--num-clients", "3", "--local-momentum", "0.4"]
+        )
+
+        self.assertEqual(args.local_momentum, 0.4)
+
     def test_parse_args_suppresses_unsupplied_overrides(self):
         args = parse_args(["--num-clients", "3"])
 

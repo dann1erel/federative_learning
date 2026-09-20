@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import torch
 from datasets import Dataset
-from flwr.app import ArrayRecord, ConfigRecord, MetricRecord, RecordDict
+from flwr.app import ArrayRecord, ConfigRecord, Context, Message, MetricRecord, RecordDict
 from flwr_datasets.partitioner import (
     DirichletPartitioner,
     IidPartitioner,
@@ -27,7 +27,8 @@ from pytorchexample.task import (
     metrics_from_confusion_matrix,
     resolve_dataset_id,
 )
-from pytorchexample.client_app import client_bookkeeping
+from pytorchexample.client_app import build_train_reply, client_bookkeeping
+from pytorchexample.local_training import LocalTrainingResult
 from pytorchexample.server_app import (
     aggregate_evaluate_metrics,
     aggregate_train_metrics,
@@ -36,6 +37,34 @@ from pytorchexample.server_app import (
 
 
 class MetricsTest(unittest.TestCase):
+    def test_train_reply_commits_state_only_after_message_construction(self):
+        incoming = Message(
+            dst_node_id=1,
+            message_type="train",
+            content=RecordDict({"config": ConfigRecord({"server-round": 1})}),
+        )
+        context = Context(1, 2, {}, RecordDict(), {})
+        update = ConfigRecord({"value": 3})
+        result = LocalTrainingResult(
+            train_loss=0.25,
+            local_steps=1,
+            state_updates={"algorithm-state": update},
+        )
+
+        with patch(
+            "pytorchexample.client_app.Message", side_effect=RuntimeError("boom")
+        ):
+            with self.assertRaisesRegex(RuntimeError, "boom"):
+                build_train_reply(incoming, context, Net(), {"num-examples": 1}, result)
+        self.assertNotIn("algorithm-state", context.state)
+
+        reply = build_train_reply(
+            incoming, context, Net(), {"num-examples": 1}, result
+        )
+
+        self.assertIsInstance(reply, Message)
+        self.assertIs(context.state["algorithm-state"], update)
+
     def test_global_evaluate_records_returned_centralized_metrics(self):
         metrics = {
             "loss": 0.25,
@@ -440,6 +469,15 @@ class PartitionerTest(unittest.TestCase):
 
 
 class ModelTest(unittest.TestCase):
+    def test_forward_features_feed_existing_classifier(self):
+        model = Net(num_classes=7)
+        images = torch.randn(2, 3, 64, 64)
+
+        features = model.forward_features(images)
+
+        self.assertEqual(features.shape, (2, 84))
+        self.assertTrue(torch.allclose(model(images), model.fc3(features)))
+
     def test_ham10000_output_shape(self):
         output = Net(num_classes=7)(torch.zeros(2, 3, 64, 64))
         self.assertEqual(tuple(output.shape), (2, 7))

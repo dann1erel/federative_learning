@@ -4,7 +4,11 @@ import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
-from pytorchexample.local_training import get_local_training_algorithm
+from pytorchexample.local_training import (
+    LocalTrainingRequest,
+    LocalTrainingResult,
+    get_local_training_algorithm,
+)
 from pytorchexample.task import (
     Net,
     get_class_weights,
@@ -24,6 +28,31 @@ def client_bookkeeping(msg: Message, context: Context) -> dict[str, int]:
         "client-id": int(context.node_config["partition-id"]),
         "server-round": int(msg.content["config"]["server-round"]),
     }
+
+
+def build_train_reply(
+    msg: Message,
+    context: Context,
+    model: torch.nn.Module,
+    base_metrics: dict[str, int | float],
+    result: LocalTrainingResult,
+) -> Message:
+    """Build a complete reply before committing algorithm-local client state."""
+    records = {
+        "arrays": ArrayRecord(model.state_dict()),
+        "metrics": MetricRecord(
+            {
+                "train_loss": result.train_loss,
+                **result.extra_metrics,
+                **base_metrics,
+            }
+        ),
+        **result.extra_records,
+    }
+    reply = Message(content=RecordDict(records), reply_to=msg)
+    for name, record in result.state_updates.items():
+        context.state[name] = record
+    return reply
 
 
 @app.train()
@@ -63,30 +92,33 @@ def train(msg: Message, context: Context):
         str(train_config.get("client-algorithm", "standard"))
     )
     training_result = local_algorithm.train(
-        model,
-        trainloader,
-        epochs=int(context.run_config["local-epochs"]),
-        learning_rate=float(train_config["lr"]),
-        device=device,
-        class_weights=get_class_weights(
-            dataset_name=dataset_name,
-            dataset_root=dataset_root,
-            mode=str(context.run_config["class-weighting"]),
-        ),
-        config=train_config,
+        LocalTrainingRequest(
+            model=model,
+            trainloader=trainloader,
+            epochs=int(context.run_config["local-epochs"]),
+            learning_rate=float(train_config["lr"]),
+            local_momentum=float(context.run_config["local-momentum"]),
+            device=device,
+            class_weights=get_class_weights(
+                dataset_name=dataset_name,
+                dataset_root=dataset_root,
+                mode=str(context.run_config["class-weighting"]),
+            ),
+            incoming=msg.content,
+            client_state=context.state,
+        )
     )
 
-    # Формируем и возвращаем ответное сообщение Message
-    model_record = ArrayRecord(model.state_dict())
-    metrics = {
-        "train_loss": training_result.train_loss,
-        **training_result.extra_metrics,
-        "num-examples": len(trainloader.dataset),
-        **client_bookkeeping(msg, context),
-    }
-    metric_record = MetricRecord(metrics)
-    content = RecordDict({"arrays": model_record, "metrics": metric_record})
-    return Message(content=content, reply_to=msg)
+    return build_train_reply(
+        msg,
+        context,
+        model,
+        {
+            "num-examples": len(trainloader.dataset),
+            **client_bookkeeping(msg, context),
+        },
+        training_result,
+    )
 
 
 @app.evaluate()

@@ -241,6 +241,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     _add_config_override(parser, "--local-epochs", "local_epochs", type=int)
     _add_config_override(parser, "--batch-size", "batch_size", type=int)
     _add_config_override(parser, "--learning-rate", "learning_rate", type=float)
+    _add_config_override(parser, "--local-momentum", "local_momentum", type=float)
     _add_config_override(parser, "--strategy", "strategy")
     _add_config_override(parser, "--proximal-mu", "proximal_mu", type=float)
     _add_config_override(
@@ -365,6 +366,7 @@ def _cli_config_values(args: argparse.Namespace) -> dict[str, Scalar]:
         "local_epochs": "local-epochs",
         "batch_size": "batch-size",
         "learning_rate": "learning-rate",
+        "local_momentum": "local-momentum",
         "strategy": "strategy",
         "proximal_mu": "proximal-mu",
         "server_learning_rate": "server-learning-rate",

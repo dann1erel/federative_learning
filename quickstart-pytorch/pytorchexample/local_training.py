@@ -8,7 +8,24 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 import torch
-from flwr.common.typing import Scalar
+from flwr.app import ArrayRecord, ConfigRecord, MetricRecord, RecordDict
+
+Record = ArrayRecord | MetricRecord | ConfigRecord
+
+
+@dataclass(frozen=True)
+class LocalTrainingRequest:
+    """Inputs available to one client-side training algorithm."""
+
+    model: torch.nn.Module
+    trainloader: Iterable[Mapping[str, torch.Tensor]]
+    epochs: int
+    learning_rate: float
+    local_momentum: float
+    device: torch.device
+    class_weights: torch.Tensor | None
+    incoming: RecordDict
+    client_state: Mapping[str, Record]
 
 
 @dataclass(frozen=True)
@@ -16,7 +33,10 @@ class LocalTrainingResult:
     """Values produced by a local training algorithm."""
 
     train_loss: float
+    local_steps: int
     extra_metrics: Mapping[str, int | float] = field(default_factory=dict)
+    extra_records: Mapping[str, Record] = field(default_factory=dict)
+    state_updates: Mapping[str, Record] = field(default_factory=dict)
 
 
 class LocalTrainingAlgorithm(Protocol):
@@ -24,17 +44,7 @@ class LocalTrainingAlgorithm(Protocol):
 
     name: str
 
-    def train(
-        self,
-        model: torch.nn.Module,
-        trainloader: Iterable[Mapping[str, torch.Tensor]],
-        *,
-        epochs: int,
-        learning_rate: float,
-        device: torch.device,
-        class_weights: torch.Tensor | None,
-        config: Mapping[str, Scalar],
-    ) -> LocalTrainingResult: ...
+    def train(self, request: LocalTrainingRequest) -> LocalTrainingResult: ...
 
 
 def proximal_penalty(
@@ -56,42 +66,15 @@ def proximal_penalty(
 class StandardTraining:
     name = "standard"
 
-    def train(
-        self,
-        model: torch.nn.Module,
-        trainloader: Iterable[Mapping[str, torch.Tensor]],
-        *,
-        epochs: int,
-        learning_rate: float,
-        device: torch.device,
-        class_weights: torch.Tensor | None,
-        config: Mapping[str, Scalar],
-    ) -> LocalTrainingResult:
-        del config
-        return _train_with_regularizer(
-            model,
-            trainloader,
-            epochs=epochs,
-            learning_rate=learning_rate,
-            device=device,
-            class_weights=class_weights,
-        )
+    def train(self, request: LocalTrainingRequest) -> LocalTrainingResult:
+        return _train_with_regularizer(request)
 
 
 class FedProxTraining:
     name = "fedprox"
 
-    def train(
-        self,
-        model: torch.nn.Module,
-        trainloader: Iterable[Mapping[str, torch.Tensor]],
-        *,
-        epochs: int,
-        learning_rate: float,
-        device: torch.device,
-        class_weights: torch.Tensor | None,
-        config: Mapping[str, Scalar],
-    ) -> LocalTrainingResult:
+    def train(self, request: LocalTrainingRequest) -> LocalTrainingResult:
+        config = request.incoming["config"]
         proximal_mu = config.get("proximal-mu")
         if isinstance(proximal_mu, bool) or not isinstance(
             proximal_mu, (int, float)
@@ -101,17 +84,12 @@ class FedProxTraining:
             raise ValueError("proximal-mu must be finite and non-negative")
 
         reference_parameters = tuple(
-            parameter.detach().clone() for parameter in model.parameters()
+            parameter.detach().clone() for parameter in request.model.parameters()
         )
         return _train_with_regularizer(
-            model,
-            trainloader,
-            epochs=epochs,
-            learning_rate=learning_rate,
-            device=device,
-            class_weights=class_weights,
+            request,
             regularizer=lambda: proximal_penalty(
-                model, reference_parameters, float(proximal_mu)
+                request.model, reference_parameters, float(proximal_mu)
             ),
         )
 
@@ -135,31 +113,34 @@ def get_local_training_algorithm(name: str) -> LocalTrainingAlgorithm:
 
 
 def _train_with_regularizer(
-    model: torch.nn.Module,
-    trainloader: Iterable[Mapping[str, torch.Tensor]],
+    request: LocalTrainingRequest,
     *,
-    epochs: int,
-    learning_rate: float,
-    device: torch.device,
-    class_weights: torch.Tensor | None,
     regularizer: Callable[[], torch.Tensor] | None = None,
 ) -> LocalTrainingResult:
-    model.to(device)
-    weights = class_weights.to(device) if class_weights is not None else None
-    criterion = torch.nn.CrossEntropyLoss(weight=weights).to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
-    model.train()
+    request.model.to(request.device)
+    weights = (
+        request.class_weights.to(request.device)
+        if request.class_weights is not None
+        else None
+    )
+    criterion = torch.nn.CrossEntropyLoss(weight=weights).to(request.device)
+    optimizer = torch.optim.SGD(
+        request.model.parameters(),
+        lr=request.learning_rate,
+        momentum=request.local_momentum,
+    )
+    request.model.train()
     running_train_loss = 0.0
     running_objective_loss = 0.0
     running_regularization_loss = 0.0
     batch_count = 0
 
-    for _ in range(epochs):
-        for batch in trainloader:
-            images = batch["img"].to(device)
-            labels = batch["label"].to(device)
+    for _ in range(request.epochs):
+        for batch in request.trainloader:
+            images = batch["img"].to(request.device)
+            labels = batch["label"].to(request.device)
             optimizer.zero_grad()
-            train_loss = criterion(model(images), labels)
+            train_loss = criterion(request.model(images), labels)
             regularization_loss = train_loss.new_zeros(())
             if regularizer is not None:
                 regularization_loss = regularizer()
@@ -175,6 +156,7 @@ def _train_with_regularizer(
         raise ValueError("local training requires at least one batch")
     return LocalTrainingResult(
         train_loss=running_train_loss / batch_count,
+        local_steps=batch_count,
         extra_metrics={
             "objective_loss": running_objective_loss / batch_count,
             "regularization_loss": running_regularization_loss / batch_count,
