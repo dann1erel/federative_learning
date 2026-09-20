@@ -376,6 +376,31 @@ class RunnerProcessTests(unittest.TestCase):
 
 
 class RunnerCliTests(unittest.TestCase):
+    def test_non_finite_fedopt_values_fail_before_creating_results(self):
+        for strategy, option, value in (
+            ("fedyogi", "--fedopt-eta", "nan"),
+            ("fedadagrad", "--fedopt-tau", "inf"),
+        ):
+            with self.subTest(strategy=strategy, option=option):
+                with tempfile.TemporaryDirectory() as directory:
+                    results_root = Path(directory) / "results"
+                    with patch("scripts.run_experiment.run_and_capture") as run:
+                        with self.assertRaisesRegex(ValueError, "must be finite"):
+                            main(
+                                [
+                                    "--results-root",
+                                    str(results_root),
+                                    "--num-clients",
+                                    "2",
+                                    "--strategy",
+                                    strategy,
+                                    option,
+                                    value,
+                                ]
+                            )
+                    run.assert_not_called()
+                    self.assertFalse(results_root.exists())
+
     def test_parse_args_accepts_local_momentum_override(self):
         args = parse_args(
             ["--num-clients", "3", "--local-momentum", "0.4"]

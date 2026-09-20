@@ -1,7 +1,14 @@
 import unittest
 from unittest.mock import Mock
 
-from flwr.serverapp.strategy import FedAdam, FedAvg, FedAvgM, FedProx
+from flwr.serverapp.strategy import (
+    FedAdagrad,
+    FedAdam,
+    FedAvg,
+    FedAvgM,
+    FedProx,
+    FedYogi,
+)
 
 from pytorchexample.strategies import (
     active_strategy_config,
@@ -17,6 +24,7 @@ class StrategyRegistryTests(unittest.TestCase):
             "strategy": "fedavg",
             "fraction-evaluate": 0.5,
             "learning-rate": 0.05,
+            "local-momentum": 0.9,
             "proximal-mu": 0.01,
             "server-learning-rate": 1.0,
             "server-momentum": 0.9,
@@ -41,6 +49,8 @@ class StrategyRegistryTests(unittest.TestCase):
             "fedavgm": FedAvgM,
             "fedprox": FedProx,
             "fedadam": FedAdam,
+            "fedyogi": FedYogi,
+            "fedadagrad": FedAdagrad,
         }
 
         for name, expected_type in expected.items():
@@ -54,6 +64,8 @@ class StrategyRegistryTests(unittest.TestCase):
         fedprox = self.build("fedprox")
         fedavgm = self.build("fedavgm")
         fedadam = self.build("fedadam")
+        fedyogi = self.build("fedyogi")
+        fedadagrad = self.build("fedadagrad")
 
         self.assertEqual(fedprox.proximal_mu, 0.01)
         self.assertEqual(fedavgm.server_learning_rate, 1.0)
@@ -63,12 +75,34 @@ class StrategyRegistryTests(unittest.TestCase):
         self.assertEqual(fedadam.beta_1, 0.9)
         self.assertEqual(fedadam.beta_2, 0.99)
         self.assertEqual(fedadam.tau, 0.001)
+        self.assertEqual(fedyogi.eta_l, 0.05)
+        self.assertEqual(fedadagrad.eta_l, 0.05)
 
     def test_active_configuration_contains_only_relevant_parameters(self):
         self.assertEqual(active_strategy_config(self.config), {})
         self.assertEqual(
             active_strategy_config({**self.config, "strategy": "fedprox"}),
             {"proximal-mu": 0.01},
+        )
+        self.assertEqual(
+            active_strategy_config({**self.config, "strategy": "fedyogi"}),
+            {
+                "eta": 0.1,
+                "eta-l": 0.05,
+                "beta-1": 0.9,
+                "beta-2": 0.99,
+                "tau": 0.001,
+                "local-momentum": 0.9,
+            },
+        )
+        self.assertEqual(
+            active_strategy_config({**self.config, "strategy": "fedadagrad"}),
+            {
+                "eta": 0.1,
+                "eta-l": 0.05,
+                "tau": 0.001,
+                "local-momentum": 0.9,
+            },
         )
         self.assertEqual(
             active_strategy_config({**self.config, "strategy": "fedadam"}),
@@ -84,9 +118,11 @@ class StrategyRegistryTests(unittest.TestCase):
     def test_client_algorithm_is_derived_from_strategy(self):
         self.assertEqual(client_algorithm_for_strategy("fedprox"), "fedprox")
         self.assertEqual(client_algorithm_for_strategy("fedadam"), "standard")
+        self.assertEqual(client_algorithm_for_strategy("fedyogi"), "standard")
+        self.assertEqual(client_algorithm_for_strategy("fedadagrad"), "standard")
 
     def test_validation_rejects_unknown_strategy_and_invalid_parameters(self):
-        with self.assertRaisesRegex(ValueError, "fedavg, fedavgm, fedprox, fedadam"):
+        with self.assertRaisesRegex(ValueError, "fedyogi"):
             validate_strategy_config({**self.config, "strategy": "unknown"})
         with self.assertRaisesRegex(ValueError, "proximal-mu"):
             validate_strategy_config({**self.config, "strategy": "fedprox", "proximal-mu": -1.0})

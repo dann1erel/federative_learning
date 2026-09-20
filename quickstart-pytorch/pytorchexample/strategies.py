@@ -8,7 +8,15 @@ from dataclasses import dataclass
 from typing import Any
 
 from flwr.common.typing import Scalar
-from flwr.serverapp.strategy import FedAdam, FedAvg, FedAvgM, FedProx, Strategy
+from flwr.serverapp.strategy import (
+    FedAdagrad,
+    FedAdam,
+    FedAvg,
+    FedAvgM,
+    FedProx,
+    FedYogi,
+    Strategy,
+)
 
 
 StrategyBuilder = Callable[[Mapping[str, Scalar], dict[str, Any]], Strategy]
@@ -44,14 +52,35 @@ def _fedavgm(config: Mapping[str, Scalar], common: dict[str, Any]) -> FedAvgM:
 
 
 def _fedadam(config: Mapping[str, Scalar], common: dict[str, Any]) -> FedAdam:
-    return FedAdam(
-        eta=float(config["fedopt-eta"]),
-        eta_l=float(config["learning-rate"]),
-        beta_1=float(config["fedopt-beta-1"]),
-        beta_2=float(config["fedopt-beta-2"]),
-        tau=float(config["fedopt-tau"]),
-        **common,
-    )
+    return FedAdam(**_build_fedopt_kwargs(config, include_betas=True), **common)
+
+
+def _fedyogi(config: Mapping[str, Scalar], common: dict[str, Any]) -> FedYogi:
+    return FedYogi(**_build_fedopt_kwargs(config, include_betas=True), **common)
+
+
+def _fedadagrad(
+    config: Mapping[str, Scalar], common: dict[str, Any]
+) -> FedAdagrad:
+    return FedAdagrad(**_build_fedopt_kwargs(config, include_betas=False), **common)
+
+
+def _build_fedopt_kwargs(
+    config: Mapping[str, Scalar], *, include_betas: bool
+) -> dict[str, float]:
+    values = {
+        "eta": float(config["fedopt-eta"]),
+        "eta_l": float(config["learning-rate"]),
+        "tau": float(config["fedopt-tau"]),
+    }
+    if include_betas:
+        values.update(
+            {
+                "beta_1": float(config["fedopt-beta-1"]),
+                "beta_2": float(config["fedopt-beta-2"]),
+            }
+        )
+    return values
 
 
 def _validate_fedavg(_: Mapping[str, Scalar]) -> None:
@@ -72,6 +101,30 @@ def _validate_fedadam(config: Mapping[str, Scalar]) -> None:
     _number_in_half_open_unit_interval(config, "fedopt-beta-1")
     _number_in_half_open_unit_interval(config, "fedopt-beta-2")
     _positive_number(config, "fedopt-tau")
+
+
+def _validate_fedadagrad(config: Mapping[str, Scalar]) -> None:
+    _positive_number(config, "fedopt-eta")
+    _positive_number(config, "fedopt-tau")
+
+
+def _fedopt_active_config(
+    config: Mapping[str, Scalar], *, include_betas: bool
+) -> dict[str, float]:
+    values = {
+        "eta": float(config["fedopt-eta"]),
+        "eta-l": float(config["learning-rate"]),
+        "tau": float(config["fedopt-tau"]),
+        "local-momentum": float(config["local-momentum"]),
+    }
+    if include_betas:
+        values.update(
+            {
+                "beta-1": float(config["fedopt-beta-1"]),
+                "beta-2": float(config["fedopt-beta-2"]),
+            }
+        )
+    return values
 
 
 STRATEGIES: dict[str, StrategyDefinition] = {
@@ -107,6 +160,20 @@ STRATEGIES: dict[str, StrategyDefinition] = {
             "beta-2": float(config["fedopt-beta-2"]),
             "tau": float(config["fedopt-tau"]),
         },
+    ),
+    "fedyogi": StrategyDefinition(
+        "fedyogi",
+        "standard",
+        _fedyogi,
+        _validate_fedadam,
+        lambda config: _fedopt_active_config(config, include_betas=True),
+    ),
+    "fedadagrad": StrategyDefinition(
+        "fedadagrad",
+        "standard",
+        _fedadagrad,
+        _validate_fedadagrad,
+        lambda config: _fedopt_active_config(config, include_betas=False),
     ),
 }
 
