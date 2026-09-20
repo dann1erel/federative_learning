@@ -8,8 +8,9 @@ framework: [torch, torchvision]
 
 Пример локальной федеративной симуляции для классификации изображений. Проект
 поддерживает CIFAR-10, HAM10000, FER2013 и Cassava Leaf Disease 2020, стратегии
-FedAvg, FedAvgM, FedProx и FedAdam, несколько сценариев разбиения данных между
-клиентами и расширенные метрики для несбалансированной классификации.
+FedAvg, FedAvgM, FedProx, FedAdam, FedYogi, FedAdagrad, FedNova, SCAFFOLD и
+MOON, несколько сценариев разбиения данных между клиентами и расширенные
+метрики для несбалансированной классификации.
 
 ## Быстрый запуск
 
@@ -228,8 +229,8 @@ flwr run . \
 
 ## Стратегии агрегации
 
-По умолчанию используется `FedAvg`. Обёртка эксперимента поддерживает четыре
-стратегии:
+По умолчанию используется `FedAvg`. Обёртка эксперимента поддерживает девять
+стратегий без сценариев атак:
 
 | Значение `strategy` | Алгоритм | Клиентское обучение |
 | --- | --- | --- |
@@ -237,6 +238,11 @@ flwr run . \
 | `fedavgm` | FedAvg с серверным momentum | стандартный SGD |
 | `fedprox` | FedAvg с проксимальным ограничением | SGD с proximal loss |
 | `fedadam` | адаптивная серверная оптимизация Adam | стандартный SGD |
+| `fedyogi` | адаптивная серверная оптимизация Yogi | стандартный SGD |
+| `fedadagrad` | адаптивная серверная оптимизация Adagrad | стандартный SGD |
+| `fednova` | нормализованное агрегирование локальных обновлений | SGD с передачей числа локальных шагов |
+| `scaffold` | контрольные вариаты клиента и сервера | SGD с коррекцией градиента и momentum 0 |
+| `moon` | FedAvg с model-contrastive objective | SGD с локальной предыдущей моделью |
 
 Примеры запуска на одном и том же разбиении HAM10000:
 
@@ -259,22 +265,68 @@ python scripts/run_experiment.py \
   --num-clients 10 --rounds 20 --strategy fedadam \
   --fedopt-eta 0.1 --fedopt-beta-1 0.9 --fedopt-beta-2 0.99 \
   --fedopt-tau 0.001
+
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy fedyogi \
+  --local-momentum 0.9 --fedopt-eta 0.1 \
+  --fedopt-beta-1 0.9 --fedopt-beta-2 0.99 --fedopt-tau 0.001
+
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy fedadagrad \
+  --local-momentum 0.9 --fedopt-eta 0.1 --fedopt-tau 0.001
+
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy fednova \
+  --local-momentum 0.9
+
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy scaffold \
+  --scaffold-server-learning-rate 1.0
+
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy moon \
+  --local-momentum 0.9 --moon-mu 1.0 --moon-temperature 0.5
 ```
 
-Для FedAdam клиентский параметр `eta_l` автоматически равен
-`learning-rate`, то есть соответствует фактическому локальному SGD. Параметры
-выбранной стратегии проверяются до создания каталога результатов.
+Для FedAdam, FedYogi и FedAdagrad клиентский параметр `eta_l` автоматически
+равен `learning-rate`, то есть соответствует фактическому локальному SGD.
+FedYogi использует `fedopt-eta`, обе beta и `fedopt-tau`; FedAdagrad использует
+`fedopt-eta` и `fedopt-tau`, а beta-параметры для него неактивны.
+
+FedNova нормализует обновления по фактическому числу локальных шагов и
+`local-momentum`, поэтому клиенты с разным объёмом локальной работы не меняют
+неявно эффективный серверный шаг. SCAFFOLD хранит контрольную вариату отдельно
+для каждого клиента и глобальную вариату на сервере; локальный momentum для
+него всегда равен нулю, а величина серверного шага задаётся
+`scaffold-server-learning-rate`. MOON добавляет к кросс-энтропии контрастивный
+штраф с коэффициентом `moon-mu` и температурой `moon-temperature`. Для него
+каждый клиент дополнительно хранит одну предыдущую локальную модель, поэтому
+потребление памяти клиента примерно на размер модели выше.
+
+Параметры выбранной стратегии, включая `local-momentum` там, где он влияет на
+обучение, проверяются до создания каталога результатов.
 Во всех стратегиях `train_loss` означает сопоставимую между запусками
 кросс-энтропию. Для FedProx полный оптимизируемый loss и величина
 проксимального штрафа дополнительно записываются как `objective_loss` и
 `regularization_loss`.
 
-Для добавления серверной стратегии зарегистрируйте новую
-`StrategyDefinition` в `pytorchexample/strategies.py`. Если алгоритм меняет
-локальное обучение, добавьте реализацию `LocalTrainingAlgorithm` в
-`pytorchexample/local_training.py` и укажите её имя в определении стратегии.
-Серверное приложение, запись метрик и клиентская оркестрация при этом не
-изменяются.
+Для добавления алгоритма создайте `StrategyDefinition` в
+`pytorchexample/strategies.py`: builder, validator, проекцию активной
+конфигурации и имя клиентского алгоритма. Стандартные стратегии Flower можно
+подключать непосредственно; нестандартное серверное агрегирование размещается
+в `pytorchexample/custom_strategies.py`. Если меняется локальная оптимизация,
+добавьте реализацию `LocalTrainingAlgorithm` в
+`pytorchexample/local_training.py`. Состояние алгоритма передавайте через
+`LocalTrainingResult.state_updates`, а дополнительные записи ответа — через
+`extra_records`: клиентская оркестрация зафиксирует состояние только после
+успешного построения ответа. Для нового скалярного параметра добавьте default в
+`pyproject.toml`, CLI-флаг и validator; активные значения автоматически
+попадут в `experiment.json` и `summary.md`.
 
 ## Наборы данных и non-IID-сценарии
 

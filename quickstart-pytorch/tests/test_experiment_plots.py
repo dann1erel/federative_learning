@@ -50,6 +50,35 @@ class ExperimentPlotTests(unittest.TestCase):
             self.assertIn("**Strategy:** fedprox", summary)
             self.assertIn("| proximal-mu | 0.0100 |", summary)
 
+    def test_summary_uses_only_manifest_strategy_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            initialize_experiment(
+                root,
+                {
+                    "status": "completed",
+                    "strategy": "moon",
+                    "strategy_config": {
+                        "moon-mu": 1.0,
+                        "moon-temperature": 0.5,
+                        "local-momentum": 0.9,
+                    },
+                    "effective_config": {"unused": 123},
+                },
+            )
+            recorder = ExperimentRecorder(root, ("a", "b"))
+            self.record_centralized_rounds(recorder)
+
+            summary = write_summary(root, ("a", "b")).read_text(encoding="utf-8")
+            strategy_section = summary.split("## Aggregation strategy", 1)[1].split(
+                "## Parameters", 1
+            )[0]
+
+            self.assertIn("| moon-mu | 1.0000 |", strategy_section)
+            self.assertIn("| moon-temperature | 0.5000 |", strategy_section)
+            self.assertIn("| local-momentum | 0.9000 |", strategy_section)
+            self.assertNotIn("unused", strategy_section)
+
     def record_centralized_rounds(self, recorder):
         for server_round in (0, 1):
             recorder.record_round(server_round, "centralized_test", {

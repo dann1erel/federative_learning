@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -28,6 +29,7 @@ from scripts.run_experiment import (
     parse_args,
     run_and_capture,
 )
+from pytorchexample.strategies import active_strategy_config
 
 
 def load_toml(path: Path) -> dict[str, object]:
@@ -108,6 +110,67 @@ class RunnerConfigurationTests(unittest.TestCase):
         self.assertEqual(defaults["local-momentum"], 0.9)
         self.assertEqual(defaults["moon-mu"], 1.0)
         self.assertEqual(defaults["moon-temperature"], 0.5)
+
+    def test_all_strategies_validate_and_generate_strategy_prefixed_slugs(self):
+        active_keys = {
+            "fedavg": {"local-momentum"},
+            "fedavgm": {
+                "server-learning-rate",
+                "server-momentum",
+                "local-momentum",
+            },
+            "fedprox": {"proximal-mu", "local-momentum"},
+            "fedadam": {
+                "eta",
+                "eta-l",
+                "beta-1",
+                "beta-2",
+                "tau",
+                "local-momentum",
+            },
+            "fedyogi": {
+                "eta",
+                "eta-l",
+                "beta-1",
+                "beta-2",
+                "tau",
+                "local-momentum",
+            },
+            "fedadagrad": {"eta", "eta-l", "tau", "local-momentum"},
+            "fednova": {"local-momentum"},
+            "scaffold": {"server-learning-rate", "local-momentum"},
+            "moon": {"moon-mu", "moon-temperature", "local-momentum"},
+        }
+        for strategy, expected_keys in active_keys.items():
+            with self.subTest(strategy=strategy):
+                config = self._valid_config(strategy=strategy)
+                _validate_config(config)
+                self.assertTrue(
+                    make_experiment_slug(config, None).startswith(f"{strategy}_")
+                )
+                self.assertEqual(
+                    set(active_strategy_config(config)), expected_keys
+                )
+
+    def test_readme_has_runnable_commands_for_new_strategies_and_flags(self):
+        root = Path(__file__).resolve().parents[1]
+        readme = (root / "README.md").read_text(encoding="utf-8")
+        command_blocks = "\n".join(
+            re.findall(r"```bash\n(.*?)```", readme, flags=re.DOTALL)
+        )
+        for token in (
+            "fedyogi",
+            "fedadagrad",
+            "fednova",
+            "scaffold",
+            "moon",
+            "--local-momentum",
+            "--scaffold-server-learning-rate",
+            "--moon-mu",
+            "--moon-temperature",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token, command_blocks)
 
     def test_load_override_file_returns_empty_mapping_for_none(self):
         self.assertEqual(load_override_file(None), {})
@@ -378,6 +441,34 @@ class RunnerProcessTests(unittest.TestCase):
 
 
 class RunnerCliTests(unittest.TestCase):
+    def test_non_finite_new_algorithm_values_fail_before_creating_results(self):
+        cases = (
+            ("fedavg", "--local-momentum"),
+            ("scaffold", "--scaffold-server-learning-rate"),
+            ("moon", "--moon-mu"),
+            ("moon", "--moon-temperature"),
+        )
+        for strategy, option in cases:
+            for value in ("nan", "inf"):
+                with self.subTest(strategy=strategy, option=option, value=value):
+                    with tempfile.TemporaryDirectory() as directory:
+                        results_root = Path(directory) / "results"
+                        with patch("scripts.run_experiment.run_and_capture") as run:
+                            with self.assertRaisesRegex(ValueError, "must be finite"):
+                                main(
+                                    [
+                                        "--results-root",
+                                        str(results_root),
+                                        "--num-clients",
+                                        "2",
+                                        "--strategy",
+                                        strategy,
+                                        option,
+                                        value,
+                                    ]
+                                )
+                        run.assert_not_called()
+                        self.assertFalse(results_root.exists())
     def test_non_finite_fedopt_values_fail_before_creating_results(self):
         for strategy, option, value in (
             ("fedyogi", "--fedopt-eta", "nan"),
@@ -494,7 +585,9 @@ class RunnerCliTests(unittest.TestCase):
             self.assertEqual(manifest["status"], "completed")
             self.assertEqual(manifest["exit_code"], 0)
             self.assertEqual(manifest["strategy"], "fedavg")
-            self.assertEqual(manifest["strategy_config"], {})
+            self.assertEqual(
+                manifest["strategy_config"], {"local-momentum": 0.9}
+            )
             self.assertEqual(
                 (experiment_dir / "console.log").read_text(encoding="utf-8").strip(),
                 "fake flwr completed",

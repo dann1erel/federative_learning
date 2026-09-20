@@ -86,10 +86,12 @@ class StrategyRegistryTests(unittest.TestCase):
         self.assertEqual(fedadagrad.eta_l, 0.05)
 
     def test_active_configuration_contains_only_relevant_parameters(self):
-        self.assertEqual(active_strategy_config(self.config), {})
+        self.assertEqual(
+            active_strategy_config(self.config), {"local-momentum": 0.9}
+        )
         self.assertEqual(
             active_strategy_config({**self.config, "strategy": "fedprox"}),
-            {"proximal-mu": 0.01},
+            {"proximal-mu": 0.01, "local-momentum": 0.9},
         )
         self.assertEqual(
             active_strategy_config({**self.config, "strategy": "fedyogi"}),
@@ -119,6 +121,7 @@ class StrategyRegistryTests(unittest.TestCase):
                 "beta-1": 0.9,
                 "beta-2": 0.99,
                 "tau": 0.001,
+                "local-momentum": 0.9,
             },
         )
 

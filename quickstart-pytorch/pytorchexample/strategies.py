@@ -157,7 +157,11 @@ def _fedopt_active_config(
 
 STRATEGIES: dict[str, StrategyDefinition] = {
     "fedavg": StrategyDefinition(
-        "fedavg", "standard", _fedavg, _validate_fedavg, lambda _: {}
+        "fedavg",
+        "standard",
+        _fedavg,
+        _validate_fedavg,
+        lambda config: {"local-momentum": float(config["local-momentum"])},
     ),
     "fedavgm": StrategyDefinition(
         "fedavgm",
@@ -167,6 +171,7 @@ STRATEGIES: dict[str, StrategyDefinition] = {
         lambda config: {
             "server-learning-rate": float(config["server-learning-rate"]),
             "server-momentum": float(config["server-momentum"]),
+            "local-momentum": float(config["local-momentum"]),
         },
     ),
     "fedprox": StrategyDefinition(
@@ -174,7 +179,10 @@ STRATEGIES: dict[str, StrategyDefinition] = {
         "fedprox",
         _fedprox,
         _validate_fedprox,
-        lambda config: {"proximal-mu": float(config["proximal-mu"])},
+        lambda config: {
+            "proximal-mu": float(config["proximal-mu"]),
+            "local-momentum": float(config["local-momentum"]),
+        },
     ),
     "fedadam": StrategyDefinition(
         "fedadam",
@@ -187,6 +195,7 @@ STRATEGIES: dict[str, StrategyDefinition] = {
             "beta-1": float(config["fedopt-beta-1"]),
             "beta-2": float(config["fedopt-beta-2"]),
             "tau": float(config["fedopt-tau"]),
+            "local-momentum": float(config["local-momentum"]),
         },
     ),
     "fedyogi": StrategyDefinition(
@@ -254,6 +263,7 @@ def validate_strategy_config(config: Mapping[str, Scalar]) -> None:
     """Validate the parameters used by the selected strategy."""
     name = strategy_name(config)
     _positive_number(config, "learning-rate")
+    _number_in_half_open_unit_interval(config, "local-momentum")
     STRATEGIES[name].validate(config)
 
 

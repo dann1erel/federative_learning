@@ -120,11 +120,13 @@ class MetricsTest(unittest.TestCase):
                 "client-id": 0, "server-round": 2,
                 "num-examples": 1, "train_loss": 1.0,
                 "objective_loss": 1.2, "regularization_loss": 0.2,
+                "contrastive_loss": 0.4,
             })}),
             RecordDict({"metrics": MetricRecord({
                 "client-id": 1, "server-round": 2,
                 "num-examples": 3, "train_loss": 3.0,
                 "objective_loss": 3.4, "regularization_loss": 0.4,
+                "contrastive_loss": 0.8,
             })}),
         ]
         recorder = Mock()
@@ -172,11 +174,13 @@ class MetricsTest(unittest.TestCase):
                 "client-id": 0, "server-round": 2,
                 "num-examples": 1, "train_loss": 1.0,
                 "objective_loss": 1.2, "regularization_loss": 0.2,
+                "contrastive_loss": 0.4,
             })}),
             RecordDict({"metrics": MetricRecord({
                 "client-id": 1, "server-round": 2,
                 "num-examples": 3, "train_loss": 3.0,
                 "objective_loss": 3.4, "regularization_loss": 0.4,
+                "contrastive_loss": 0.8,
             })}),
         ]
         with tempfile.TemporaryDirectory() as directory:
@@ -189,10 +193,12 @@ class MetricsTest(unittest.TestCase):
 
         self.assertEqual(result["train_loss"], 2.5)
         self.assertAlmostEqual(result["objective_loss"], 2.85)
+        self.assertAlmostEqual(result["contrastive_loss"], 0.7)
         self.assertEqual(rows[0]["source"], "train")
         self.assertEqual(rows[0]["loss"], "2.5")
         self.assertAlmostEqual(float(rows[0]["objective_loss"]), 2.85)
         self.assertAlmostEqual(float(rows[0]["regularization_loss"]), 0.35)
+        self.assertAlmostEqual(float(rows[0]["contrastive_loss"]), 0.7)
         self.assertEqual(rows[0]["num_examples"], "4")
 
     def test_evaluate_aggregation_is_unchanged_when_recording(self):
