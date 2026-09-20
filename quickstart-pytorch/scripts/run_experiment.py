@@ -247,6 +247,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     _add_config_override(
         parser, "--server-learning-rate", "server_learning_rate", type=float
     )
+    _add_config_override(parser, "--moon-mu", "moon_mu", type=float)
+    _add_config_override(
+        parser, "--moon-temperature", "moon_temperature", type=float
+    )
     _add_config_override(parser, "--server-momentum", "server_momentum", type=float)
     _add_config_override(parser, "--fedopt-eta", "fedopt_eta", type=float)
     _add_config_override(parser, "--fedopt-beta-1", "fedopt_beta_1", type=float)
@@ -382,6 +386,8 @@ def _cli_config_values(args: argparse.Namespace) -> dict[str, Scalar]:
         "fedopt_beta_2": "fedopt-beta-2",
         "fedopt_tau": "fedopt-tau",
         "scaffold_server_learning_rate": "scaffold-server-learning-rate",
+        "moon_mu": "moon-mu",
+        "moon_temperature": "moon-temperature",
         "save_model": "save-model",
     }
     return {

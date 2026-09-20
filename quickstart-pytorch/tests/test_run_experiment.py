@@ -106,6 +106,8 @@ class RunnerConfigurationTests(unittest.TestCase):
         self.assertFalse(defaults["save-model"])
         self.assertEqual(defaults["strategy"], "fedavg")
         self.assertEqual(defaults["local-momentum"], 0.9)
+        self.assertEqual(defaults["moon-mu"], 1.0)
+        self.assertEqual(defaults["moon-temperature"], 0.5)
 
     def test_load_override_file_returns_empty_mapping_for_none(self):
         self.assertEqual(load_override_file(None), {})
@@ -407,6 +409,21 @@ class RunnerCliTests(unittest.TestCase):
         )
 
         self.assertEqual(args.local_momentum, 0.4)
+
+    def test_parse_args_accepts_moon_overrides(self):
+        args = parse_args(
+            [
+                "--num-clients",
+                "3",
+                "--moon-mu",
+                "2.0",
+                "--moon-temperature",
+                "0.25",
+            ]
+        )
+
+        self.assertEqual(args.moon_mu, 2.0)
+        self.assertEqual(args.moon_temperature, 0.25)
 
     def test_parse_args_suppresses_unsupplied_overrides(self):
         args = parse_args(["--num-clients", "3"])

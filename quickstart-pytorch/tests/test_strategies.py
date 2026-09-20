@@ -34,6 +34,8 @@ class StrategyRegistryTests(unittest.TestCase):
             "fedopt-beta-2": 0.99,
             "fedopt-tau": 0.001,
             "scaffold-server-learning-rate": 1.0,
+            "moon-mu": 1.0,
+            "moon-temperature": 0.5,
         }
         self.train_metrics = Mock()
         self.evaluate_metrics = Mock()
@@ -55,6 +57,7 @@ class StrategyRegistryTests(unittest.TestCase):
             "fedadagrad": FedAdagrad,
             "fednova": FedNovaStrategy,
             "scaffold": ScaffoldStrategy,
+            "moon": FedAvg,
         }
 
         for name, expected_type in expected.items():
@@ -134,6 +137,11 @@ class StrategyRegistryTests(unittest.TestCase):
             active_strategy_config({**self.config, "strategy": "scaffold"}),
             {"server-learning-rate": 1.0, "local-momentum": 0.0},
         )
+        self.assertEqual(client_algorithm_for_strategy("moon"), "moon")
+        self.assertEqual(
+            active_strategy_config({**self.config, "strategy": "moon"}),
+            {"moon-mu": 1.0, "moon-temperature": 0.5, "local-momentum": 0.9},
+        )
 
     def test_validation_rejects_unknown_strategy_and_invalid_parameters(self):
         with self.assertRaisesRegex(ValueError, "fedyogi"):
@@ -161,6 +169,10 @@ class StrategyRegistryTests(unittest.TestCase):
                     "strategy": "scaffold",
                     "scaffold-server-learning-rate": 0.0,
                 }
+            )
+        with self.assertRaisesRegex(ValueError, "moon-temperature"):
+            validate_strategy_config(
+                {**self.config, "strategy": "moon", "moon-temperature": 0.0}
             )
 
 

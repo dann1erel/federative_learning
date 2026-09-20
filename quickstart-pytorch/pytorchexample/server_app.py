@@ -11,6 +11,7 @@ from flwr.serverapp import Grid, ServerApp
 
 from pytorchexample.experiment import ExperimentRecorder
 from pytorchexample.strategies import (
+    active_strategy_config,
     client_algorithm_for_strategy,
     create_strategy,
     strategy_name,
@@ -75,6 +76,7 @@ def main(grid: Grid, context: Context) -> None:
             {
                 "lr": lr,
                 "client-algorithm": client_algorithm_for_strategy(selected_strategy),
+                **active_strategy_config(context.run_config),
             }
         ),
         num_rounds=num_rounds,

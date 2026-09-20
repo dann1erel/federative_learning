@@ -57,3 +57,5 @@ fedopt-beta-1 = 0.9
 fedopt-beta-2 = 0.99
 fedopt-tau = 0.001
 scaffold-server-learning-rate = 1.0
+moon-mu = 1.0
+moon-temperature = 0.5

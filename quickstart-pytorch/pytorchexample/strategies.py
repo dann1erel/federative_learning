@@ -80,6 +80,10 @@ def _scaffold(
     )
 
 
+def _moon(_: Mapping[str, Scalar], common: dict[str, Any]) -> FedAvg:
+    return FedAvg(**common)
+
+
 def _build_fedopt_kwargs(
     config: Mapping[str, Scalar], *, include_betas: bool
 ) -> dict[str, float]:
@@ -125,6 +129,11 @@ def _validate_fedadagrad(config: Mapping[str, Scalar]) -> None:
 
 def _validate_scaffold(config: Mapping[str, Scalar]) -> None:
     _positive_number(config, "scaffold-server-learning-rate")
+
+
+def _validate_moon(config: Mapping[str, Scalar]) -> None:
+    _number_at_least(config, "moon-mu", 0.0)
+    _positive_number(config, "moon-temperature")
 
 
 def _fedopt_active_config(
@@ -211,6 +220,17 @@ STRATEGIES: dict[str, StrategyDefinition] = {
                 config["scaffold-server-learning-rate"]
             ),
             "local-momentum": 0.0,
+        },
+    ),
+    "moon": StrategyDefinition(
+        "moon",
+        "moon",
+        _moon,
+        _validate_moon,
+        lambda config: {
+            "moon-mu": float(config["moon-mu"]),
+            "moon-temperature": float(config["moon-temperature"]),
+            "local-momentum": float(config["local-momentum"]),
         },
     ),
 }

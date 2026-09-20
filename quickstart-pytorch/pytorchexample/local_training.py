@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import math
+import copy
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Protocol
 
 import torch
+import torch.nn.functional as F
 from flwr.app import ArrayRecord, ConfigRecord, MetricRecord, RecordDict
 
 Record = ArrayRecord | MetricRecord | ConfigRecord
@@ -245,11 +247,131 @@ class ScaffoldTraining:
                 )
             },
         )
+
+
+def model_contrastive_loss(
+    current: torch.nn.Module,
+    global_model: torch.nn.Module,
+    previous_model: torch.nn.Module,
+    images: torch.Tensor,
+    temperature: float,
+) -> torch.Tensor:
+    """Compute MOON's two-way model-level contrastive loss."""
+    if not math.isfinite(temperature) or temperature <= 0:
+        raise ValueError("moon temperature must be finite and positive")
+    current_features = current.forward_features(images)
+    with torch.no_grad():
+        global_features = global_model.forward_features(images)
+        previous_features = previous_model.forward_features(images)
+    positive = F.cosine_similarity(current_features, global_features, dim=1)
+    negative = F.cosine_similarity(current_features, previous_features, dim=1)
+    logits = torch.stack((positive, negative), dim=1) / temperature
+    targets = torch.zeros(logits.shape[0], dtype=torch.long, device=logits.device)
+    return F.cross_entropy(logits, targets)
+
+
+class MoonTraining:
+    name = "moon"
+
+    def train(self, request: LocalTrainingRequest) -> LocalTrainingResult:
+        config = request.incoming["config"]
+        moon_mu = config.get("moon-mu")
+        temperature = config.get("moon-temperature")
+        if isinstance(moon_mu, bool) or not isinstance(moon_mu, (int, float)):
+            raise ValueError("moon-mu must be a number")
+        if not math.isfinite(float(moon_mu)) or moon_mu < 0:
+            raise ValueError("moon-mu must be finite and non-negative")
+        if isinstance(temperature, bool) or not isinstance(
+            temperature, (int, float)
+        ):
+            raise ValueError("moon-temperature must be a number")
+        if not math.isfinite(float(temperature)) or temperature <= 0:
+            raise ValueError("moon-temperature must be finite and positive")
+
+        request.model.to(request.device)
+        global_model = copy.deepcopy(request.model).to(request.device)
+        previous_model = copy.deepcopy(request.model).to(request.device)
+        previous_record = request.client_state.get("moon-previous-model")
+        if previous_record is not None:
+            if not isinstance(previous_record, ArrayRecord):
+                raise ValueError("moon-previous-model must be an ArrayRecord")
+            try:
+                previous_model.load_state_dict(
+                    previous_record.to_torch_state_dict(), strict=True
+                )
+            except RuntimeError as exc:
+                raise ValueError(
+                    "moon-previous-model structure must match the current model"
+                ) from exc
+        for frozen_model in (global_model, previous_model):
+            frozen_model.eval()
+            for parameter in frozen_model.parameters():
+                parameter.requires_grad_(False)
+
+        weights = (
+            request.class_weights.to(request.device)
+            if request.class_weights is not None
+            else None
+        )
+        criterion = torch.nn.CrossEntropyLoss(weight=weights).to(request.device)
+        optimizer = torch.optim.SGD(
+            request.model.parameters(),
+            lr=request.learning_rate,
+            momentum=request.local_momentum,
+        )
+        request.model.train()
+        task_total = 0.0
+        contrastive_total = 0.0
+        objective_total = 0.0
+        local_steps = 0
+        for _ in range(request.epochs):
+            for batch in request.trainloader:
+                images = batch["img"].to(request.device)
+                labels = batch["label"].to(request.device)
+                optimizer.zero_grad()
+                task_loss = criterion(request.model(images), labels)
+                contrastive_loss = model_contrastive_loss(
+                    request.model,
+                    global_model,
+                    previous_model,
+                    images,
+                    float(temperature),
+                )
+                objective_loss = task_loss + float(moon_mu) * contrastive_loss
+                objective_loss.backward()
+                optimizer.step()
+                task_total += task_loss.item()
+                contrastive_total += contrastive_loss.item()
+                objective_total += objective_loss.item()
+                local_steps += 1
+
+        if local_steps == 0:
+            raise ValueError("local training requires at least one batch")
+        return LocalTrainingResult(
+            train_loss=task_total / local_steps,
+            local_steps=local_steps,
+            extra_metrics={
+                "objective_loss": objective_total / local_steps,
+                "regularization_loss": 0.0,
+                "contrastive_loss": contrastive_total / local_steps,
+            },
+            state_updates={
+                "moon-previous-model": ArrayRecord(
+                    {
+                        name: value.detach().cpu()
+                        for name, value in request.model.state_dict().items()
+                    }
+                )
+            },
+        )
+
+
 LOCAL_TRAINING_ALGORITHMS: dict[str, LocalTrainingAlgorithm] = {
     "standard": StandardTraining(),
     "fedprox": FedProxTraining(),
     "fednova": FedNovaTraining(),
     "scaffold": ScaffoldTraining(),
+    "moon": MoonTraining(),
 }
 
 

@@ -7,8 +7,34 @@ from flwr.app import ArrayRecord, ConfigRecord, RecordDict
 from pytorchexample.local_training import (
     LocalTrainingRequest,
     get_local_training_algorithm,
+    model_contrastive_loss,
     proximal_penalty,
 )
+
+
+class FeatureLinear(torch.nn.Module):
+    def __init__(self, weight):
+        super().__init__()
+        self.weight = torch.nn.Parameter(torch.tensor(weight, dtype=torch.float32))
+
+    def forward_features(self, images):
+        return torch.nn.functional.linear(images, self.weight)
+
+    def forward(self, images):
+        return self.forward_features(images)
+
+
+class TinyMoonModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encoder = torch.nn.Linear(1, 2, bias=False)
+        self.classifier = torch.nn.Linear(2, 2, bias=False)
+
+    def forward_features(self, images):
+        return self.encoder(images)
+
+    def forward(self, images):
+        return self.classifier(self.forward_features(images))
 
 
 class LocalTrainingTests(unittest.TestCase):
@@ -184,6 +210,108 @@ class LocalTrainingTests(unittest.TestCase):
                     ),
                 )
             )
+
+    def test_moon_contrastive_loss_prefers_global_representation(self):
+        images = torch.tensor([[1.0, 0.0]])
+        global_model = FeatureLinear([[1.0, 0.0], [0.0, 1.0]])
+        previous_model = FeatureLinear([[-1.0, 0.0], [0.0, -1.0]])
+        aligned = FeatureLinear([[1.0, 0.0], [0.0, 1.0]])
+        opposed = FeatureLinear([[-1.0, 0.0], [0.0, -1.0]])
+
+        aligned_loss = model_contrastive_loss(
+            aligned, global_model, previous_model, images, 0.5
+        )
+        opposed_loss = model_contrastive_loss(
+            opposed, global_model, previous_model, images, 0.5
+        )
+
+        self.assertLess(aligned_loss.item(), opposed_loss.item())
+        aligned_loss.backward()
+        self.assertIsNone(global_model.weight.grad)
+        self.assertIsNone(previous_model.weight.grad)
+
+    def test_moon_rejects_invalid_temperature(self):
+        model = FeatureLinear([[1.0]])
+        for temperature in (0.0, float("nan"), float("inf")):
+            with self.subTest(temperature=temperature):
+                with self.assertRaisesRegex(ValueError, "temperature"):
+                    model_contrastive_loss(
+                        model,
+                        copy.deepcopy(model),
+                        copy.deepcopy(model),
+                        torch.tensor([[1.0]]),
+                        temperature,
+                    )
+
+    def test_moon_first_round_has_neutral_contrastive_gradient(self):
+        current = FeatureLinear([[1.0, 0.0], [0.0, 1.0]])
+        global_model = copy.deepcopy(current)
+        previous_model = copy.deepcopy(current)
+
+        loss = model_contrastive_loss(
+            current,
+            global_model,
+            previous_model,
+            torch.tensor([[1.0, 0.0]]),
+            0.5,
+        )
+        loss.backward()
+
+        self.assertTrue(torch.equal(current.weight.grad, torch.zeros_like(current.weight)))
+
+    def test_moon_uses_isolated_previous_models_and_defers_state_update(self):
+        torch.manual_seed(7)
+        base = TinyMoonModel()
+        previous_a = copy.deepcopy(base)
+        previous_b = copy.deepcopy(base)
+        with torch.no_grad():
+            previous_a.encoder.weight.fill_(1.0)
+            previous_b.encoder.weight.fill_(-1.0)
+        state_a = {"moon-previous-model": ArrayRecord(previous_a.state_dict())}
+        state_b = {"moon-previous-model": ArrayRecord(previous_b.state_dict())}
+        original_a = state_a["moon-previous-model"].to_torch_state_dict()
+        original_b = state_b["moon-previous-model"].to_torch_state_dict()
+        incoming = RecordDict(
+            {
+                "config": ConfigRecord(
+                    {"moon-mu": 1.0, "moon-temperature": 0.5}
+                )
+            }
+        )
+        batch = [{"img": torch.tensor([[1.0]]), "label": torch.tensor([0])}]
+
+        result_a = get_local_training_algorithm("moon").train(
+            self._request(
+                copy.deepcopy(base), batch, incoming=incoming, client_state=state_a
+            )
+        )
+        result_b = get_local_training_algorithm("moon").train(
+            self._request(
+                copy.deepcopy(base), batch, incoming=incoming, client_state=state_b
+            )
+        )
+
+        self.assertTrue(
+            torch.equal(
+                state_a["moon-previous-model"].to_torch_state_dict()["encoder.weight"],
+                original_a["encoder.weight"],
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                state_b["moon-previous-model"].to_torch_state_dict()["encoder.weight"],
+                original_b["encoder.weight"],
+            )
+        )
+        self.assertIn("moon-previous-model", result_a.state_updates)
+        self.assertIn("moon-previous-model", result_b.state_updates)
+        next_a = result_a.state_updates[
+            "moon-previous-model"
+        ].to_torch_state_dict()["encoder.weight"]
+        next_b = result_b.state_updates[
+            "moon-previous-model"
+        ].to_torch_state_dict()["encoder.weight"]
+        self.assertFalse(torch.allclose(next_a, next_b))
 
     def test_proximal_penalty_uses_squared_parameter_distance(self):
         model = torch.nn.Linear(1, 1, bias=False)
