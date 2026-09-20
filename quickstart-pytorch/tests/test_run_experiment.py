@@ -104,6 +104,7 @@ class RunnerConfigurationTests(unittest.TestCase):
         self.assertEqual(defaults["dataset"], "cifar10")
         self.assertEqual(defaults["num-server-rounds"], 3)
         self.assertFalse(defaults["save-model"])
+        self.assertEqual(defaults["strategy"], "fedavg")
 
     def test_load_override_file_returns_empty_mapping_for_none(self):
         self.assertEqual(load_override_file(None), {})
@@ -159,11 +160,16 @@ class RunnerConfigurationTests(unittest.TestCase):
 
     def test_make_experiment_slug_uses_partitioner_alpha_and_seed(self):
         slug = make_experiment_slug(
-            {"partitioner": "dirichlet", "dirichlet-alpha": 0.5, "seed": 42},
+            {
+                "strategy": "fedprox",
+                "partitioner": "dirichlet",
+                "dirichlet-alpha": 0.5,
+                "seed": 42,
+            },
             None,
         )
 
-        self.assertEqual(slug, "fedavg_dirichlet-a0.5_seed42")
+        self.assertEqual(slug, "fedprox_dirichlet-a0.5_seed42")
 
     def test_make_experiment_slug_uses_name_when_provided(self):
         slug = make_experiment_slug(
@@ -397,6 +403,26 @@ class RunnerCliTests(unittest.TestCase):
             run.assert_not_called()
             self.assertFalse(results_root.exists())
 
+    def test_invalid_strategy_fails_before_creating_result_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            results_root = Path(directory) / "results"
+
+            with patch("scripts.run_experiment.run_and_capture") as run:
+                with self.assertRaisesRegex(ValueError, "supported strategies"):
+                    main(
+                        [
+                            "--results-root",
+                            str(results_root),
+                            "--num-clients",
+                            "2",
+                            "--strategy",
+                            "unknown",
+                        ]
+                    )
+
+            run.assert_not_called()
+            self.assertFalse(results_root.exists())
+
     def test_script_invocation_runs_main_and_records_completed_run(self):
         with tempfile.TemporaryDirectory() as directory:
             workdir = Path(directory)
@@ -417,6 +443,8 @@ class RunnerCliTests(unittest.TestCase):
             self.assertTrue((experiment_dir / "environment.json").exists())
             self.assertEqual(manifest["status"], "completed")
             self.assertEqual(manifest["exit_code"], 0)
+            self.assertEqual(manifest["strategy"], "fedavg")
+            self.assertEqual(manifest["strategy_config"], {})
             self.assertEqual(
                 (experiment_dir / "console.log").read_text(encoding="utf-8").strip(),
                 "fake flwr completed",

@@ -31,6 +31,25 @@ class ExperimentPlotTests(unittest.TestCase):
                 summary.read_text(encoding="utf-8"),
             )
 
+    def test_summary_reports_strategy_and_active_parameters(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            initialize_experiment(
+                root,
+                {
+                    "status": "completed",
+                    "strategy": "fedprox",
+                    "strategy_config": {"proximal-mu": 0.01},
+                },
+            )
+            recorder = ExperimentRecorder(root, ("a", "b"))
+            self.record_centralized_rounds(recorder)
+
+            summary = write_summary(root, ("a", "b")).read_text(encoding="utf-8")
+
+            self.assertIn("**Strategy:** fedprox", summary)
+            self.assertIn("| proximal-mu | 0.0100 |", summary)
+
     def record_centralized_rounds(self, recorder):
         for server_round in (0, 1):
             recorder.record_round(server_round, "centralized_test", {

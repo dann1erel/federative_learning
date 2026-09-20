@@ -7,9 +7,9 @@ framework: [torch, torchvision]
 # Федеративное обучение с PyTorch и Flower
 
 Пример локальной федеративной симуляции для классификации изображений. Проект
-поддерживает CIFAR-10, HAM10000, FER2013 и Cassava Leaf Disease 2020, несколько
-сценариев разбиения данных между клиентами и расширенные метрики для
-несбалансированной классификации.
+поддерживает CIFAR-10, HAM10000, FER2013 и Cassava Leaf Disease 2020, стратегии
+FedAvg, FedAvgM, FedProx и FedAdam, несколько сценариев разбиения данных между
+клиентами и расширенные метрики для несбалансированной классификации.
 
 ## Быстрый запуск
 
@@ -103,6 +103,10 @@ results/
 Ключ `experiment-dir` зарезервирован за обёрткой: в `pyproject.toml` он
 объявлен пустым, а перед запуском заменяется абсолютным путём созданного
 каталога результата.
+
+Имя стратегии и только влияющие на неё параметры сохраняются в полях
+`strategy` и `strategy_config` файла `experiment.json`. Если `--name` не задан,
+стратегия также включается в автоматически создаваемое имя каталога.
 
 Статусы в `experiment.json`:
 
@@ -221,6 +225,56 @@ flwr run . \
   --run-config "num-server-rounds=5 learning-rate=0.05" \
   --stream
 ```
+
+## Стратегии агрегации
+
+По умолчанию используется `FedAvg`. Обёртка эксперимента поддерживает четыре
+стратегии:
+
+| Значение `strategy` | Алгоритм | Клиентское обучение |
+| --- | --- | --- |
+| `fedavg` | взвешенное FedAvg | стандартный SGD |
+| `fedavgm` | FedAvg с серверным momentum | стандартный SGD |
+| `fedprox` | FedAvg с проксимальным ограничением | SGD с proximal loss |
+| `fedadam` | адаптивная серверная оптимизация Adam | стандартный SGD |
+
+Примеры запуска на одном и том же разбиении HAM10000:
+
+```bash
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy fedavg
+
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy fedprox --proximal-mu 0.01
+
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy fedavgm \
+  --server-learning-rate 1.0 --server-momentum 0.9
+
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --num-clients 10 --rounds 20 --strategy fedadam \
+  --fedopt-eta 0.1 --fedopt-beta-1 0.9 --fedopt-beta-2 0.99 \
+  --fedopt-tau 0.001
+```
+
+Для FedAdam клиентский параметр `eta_l` автоматически равен
+`learning-rate`, то есть соответствует фактическому локальному SGD. Параметры
+выбранной стратегии проверяются до создания каталога результатов.
+Во всех стратегиях `train_loss` означает сопоставимую между запусками
+кросс-энтропию. Для FedProx полный оптимизируемый loss и величина
+проксимального штрафа дополнительно записываются как `objective_loss` и
+`regularization_loss`.
+
+Для добавления серверной стратегии зарегистрируйте новую
+`StrategyDefinition` в `pytorchexample/strategies.py`. Если алгоритм меняет
+локальное обучение, добавьте реализацию `LocalTrainingAlgorithm` в
+`pytorchexample/local_training.py` и укажите её имя в определении стратегии.
+Серверное приложение, запись метрик и клиентская оркестрация при этом не
+изменяются.
 
 ## Наборы данных и non-IID-сценарии
 

@@ -4,6 +4,7 @@ import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
+from pytorchexample.local_training import get_local_training_algorithm
 from pytorchexample.task import (
     Net,
     get_class_weights,
@@ -12,7 +13,6 @@ from pytorchexample.task import (
     metrics_for_flower,
 )
 from pytorchexample.task import test as test_fn
-from pytorchexample.task import train as train_fn
 
 # Клиентское приложение Flower (ClientApp)
 app = ClientApp()
@@ -58,24 +58,29 @@ def train(msg: Message, context: Context):
         validation_ratio=float(context.run_config["validation-ratio"]),
     )
 
-    # Вызываем функцию обучения
-    train_loss = train_fn(
+    train_config = msg.content["config"]
+    local_algorithm = get_local_training_algorithm(
+        str(train_config.get("client-algorithm", "standard"))
+    )
+    training_result = local_algorithm.train(
         model,
         trainloader,
-        context.run_config["local-epochs"],
-        msg.content["config"]["lr"],
-        device,
+        epochs=int(context.run_config["local-epochs"]),
+        learning_rate=float(train_config["lr"]),
+        device=device,
         class_weights=get_class_weights(
             dataset_name=dataset_name,
             dataset_root=dataset_root,
             mode=str(context.run_config["class-weighting"]),
         ),
+        config=train_config,
     )
 
     # Формируем и возвращаем ответное сообщение Message
     model_record = ArrayRecord(model.state_dict())
     metrics = {
-        "train_loss": train_loss,
+        "train_loss": training_result.train_loss,
+        **training_result.extra_metrics,
         "num-examples": len(trainloader.dataset),
         **client_bookkeeping(msg, context),
     }

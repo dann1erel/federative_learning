@@ -28,6 +28,11 @@ from pytorchexample.experiment import (
     slugify,
     update_manifest,
 )
+from pytorchexample.strategies import (
+    active_strategy_config,
+    strategy_name,
+    validate_strategy_config,
+)
 from pytorchexample.task import get_dataset_spec
 
 try:
@@ -91,7 +96,7 @@ def make_experiment_slug(config: Mapping[str, Scalar], name: str | None) -> str:
 
     partitioner = str(config["partitioner"])
     seed = config["seed"]
-    slug = f"fedavg_{partitioner}"
+    slug = f"{strategy_name(config)}_{partitioner}"
     if partitioner == "dirichlet" and "dirichlet-alpha" in config:
         slug = f"{slug}-a{config['dirichlet-alpha']}"
     return slugify(f"{slug}_seed{seed}")
@@ -236,6 +241,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     _add_config_override(parser, "--local-epochs", "local_epochs", type=int)
     _add_config_override(parser, "--batch-size", "batch_size", type=int)
     _add_config_override(parser, "--learning-rate", "learning_rate", type=float)
+    _add_config_override(parser, "--strategy", "strategy")
+    _add_config_override(parser, "--proximal-mu", "proximal_mu", type=float)
+    _add_config_override(
+        parser, "--server-learning-rate", "server_learning_rate", type=float
+    )
+    _add_config_override(parser, "--server-momentum", "server_momentum", type=float)
+    _add_config_override(parser, "--fedopt-eta", "fedopt_eta", type=float)
+    _add_config_override(parser, "--fedopt-beta-1", "fedopt_beta_1", type=float)
+    _add_config_override(parser, "--fedopt-beta-2", "fedopt_beta_2", type=float)
+    _add_config_override(parser, "--fedopt-tau", "fedopt_tau", type=float)
     parser.add_argument("--num-clients", type=int, required=True)
     model_group = parser.add_mutually_exclusive_group()
     model_group.add_argument(
@@ -297,6 +312,9 @@ def _run_lifecycle(
         "app_config": dict(app_config),
         "federation_config": dict(federation_config),
     }
+    if "strategy" in app_config:
+        metadata["strategy"] = strategy_name(app_config)
+        metadata["strategy_config"] = active_strategy_config(app_config)
     if name is not None:
         metadata["name"] = name
 
@@ -347,6 +365,14 @@ def _cli_config_values(args: argparse.Namespace) -> dict[str, Scalar]:
         "local_epochs": "local-epochs",
         "batch_size": "batch-size",
         "learning_rate": "learning-rate",
+        "strategy": "strategy",
+        "proximal_mu": "proximal-mu",
+        "server_learning_rate": "server-learning-rate",
+        "server_momentum": "server-momentum",
+        "fedopt_eta": "fedopt-eta",
+        "fedopt_beta_1": "fedopt-beta-1",
+        "fedopt_beta_2": "fedopt-beta-2",
+        "fedopt_tau": "fedopt-tau",
         "save_model": "save-model",
     }
     return {
@@ -395,6 +421,7 @@ def _validate_config(config: Mapping[str, Scalar]) -> None:
     fraction_evaluate = _require_number(config, "fraction-evaluate")
     if not 0 < fraction_evaluate <= 1:
         raise ValueError("fraction-evaluate must be greater than 0 and at most 1")
+    validate_strategy_config(config)
 
 
 def _require_string(config: Mapping[str, Scalar], key: str) -> str:

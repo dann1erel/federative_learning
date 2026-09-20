@@ -8,9 +8,13 @@ from typing import Sequence
 import torch
 from flwr.app import ArrayRecord, ConfigRecord, Context, MetricRecord, RecordDict
 from flwr.serverapp import Grid, ServerApp
-from flwr.serverapp.strategy import FedAvg
 
 from pytorchexample.experiment import ExperimentRecorder
+from pytorchexample.strategies import (
+    client_algorithm_for_strategy,
+    create_strategy,
+    strategy_name,
+)
 from pytorchexample.task import (
     Net,
     get_dataset_spec,
@@ -42,7 +46,6 @@ def main(grid: Grid, context: Context) -> None:
     """Основная точка входа для ServerApp."""
 
     # Считываем конфигурацию запуска
-    fraction_evaluate: float = context.run_config["fraction-evaluate"]
     num_rounds: int = context.run_config["num-server-rounds"]
     lr: float = context.run_config["learning-rate"]
     dataset_name = str(context.run_config["dataset"])
@@ -54,9 +57,9 @@ def main(grid: Grid, context: Context) -> None:
     global_model = Net(num_classes=dataset_spec.num_classes)
     arrays = ArrayRecord(global_model.state_dict())
 
-    # Инициализируем стратегию FedAvg
-    strategy = FedAvg(
-        fraction_evaluate=fraction_evaluate,
+    selected_strategy = strategy_name(context.run_config)
+    strategy = create_strategy(
+        context.run_config,
         train_metrics_aggr_fn=partial(aggregate_train_metrics, recorder=recorder),
         evaluate_metrics_aggr_fn=partial(
             aggregate_evaluate_metrics,
@@ -65,11 +68,15 @@ def main(grid: Grid, context: Context) -> None:
         ),
     )
 
-    # Запускаем стратегию и выполняем FedAvg в течение `num_rounds` раундов
     result = strategy.start(
         grid=grid,
         initial_arrays=arrays,
-        train_config=ConfigRecord({"lr": lr}),
+        train_config=ConfigRecord(
+            {
+                "lr": lr,
+                "client-algorithm": client_algorithm_for_strategy(selected_strategy),
+            }
+        ),
         num_rounds=num_rounds,
         evaluate_fn=partial(
             global_evaluate,

@@ -325,6 +325,15 @@ def write_summary(experiment_dir: str | Path, class_names: Sequence[str]) -> Pat
     parameters = manifest.get("effective_config") or manifest.get("run_config") or {}
     lines = [f"# Experiment summary — {manifest.get('name') or root.name}", ""]
     lines.extend(["## Completion status", "", f"**Status:** {manifest.get('status', 'unknown')}", ""])
+    strategy = manifest.get("strategy")
+    strategy_config = manifest.get("strategy_config")
+    if strategy:
+        lines.extend(["## Aggregation strategy", "", f"**Strategy:** {strategy}", ""])
+        if isinstance(strategy_config, Mapping) and strategy_config:
+            lines.extend(["| Parameter | Value |", "| --- | --- |"])
+            for key, value in strategy_config.items():
+                lines.append(f"| {key} | {_format_value(value)} |")
+            lines.append("")
     lines.extend(["## Parameters", "", "| Parameter | Value |", "| --- | --- |"])
     if isinstance(parameters, Mapping) and parameters:
         for key, value in parameters.items():

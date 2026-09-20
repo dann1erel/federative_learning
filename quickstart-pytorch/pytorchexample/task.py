@@ -24,6 +24,7 @@ from pytorchexample.dataset_adapters import (
     CASSAVA_CLASS_NAMES,
     FER2013_CLASS_NAMES,
 )
+from pytorchexample.local_training import get_local_training_algorithm
 
 
 CIFAR10_CLASS_NAMES = (
@@ -473,23 +474,16 @@ def get_class_weights(
 
 def train(net, trainloader, epochs, lr, device, class_weights=None):
     """Обучает модель на обучающем наборе."""
-    net.to(device)  # перемещаем модель на GPU, если он доступен
-    weights = class_weights.to(device) if class_weights is not None else None
-    criterion = torch.nn.CrossEntropyLoss(weight=weights).to(device)
-    optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
-    net.train()
-    running_loss = 0.0
-    for _ in range(epochs):
-        for batch in trainloader:
-            images = batch["img"].to(device)
-            labels = batch["label"].to(device)
-            optimizer.zero_grad()
-            loss = criterion(net(images), labels)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
-    avg_trainloss = running_loss / (epochs * len(trainloader))
-    return avg_trainloss
+    result = get_local_training_algorithm("standard").train(
+        net,
+        trainloader,
+        epochs=epochs,
+        learning_rate=lr,
+        device=device,
+        class_weights=class_weights,
+        config={},
+    )
+    return result.train_loss
 
 
 def metrics_from_confusion_matrix(confusion_matrix, class_names=None):
