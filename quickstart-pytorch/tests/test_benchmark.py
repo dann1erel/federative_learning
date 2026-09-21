@@ -79,15 +79,22 @@ class BenchmarkMatrixTests(unittest.TestCase):
 
     def test_dry_run_cli_prints_exactly_eighteen_pending_cases(self):
         output = io.StringIO()
-
-        with contextlib.redirect_stdout(output):
-            exit_code = main(
-                [
-                    "--config",
-                    str(PROJECT_ROOT / "configs" / "aggregation_pilot.toml"),
-                    "--dry-run",
-                ]
+        source_config = PROJECT_ROOT / "configs" / "aggregation_pilot.toml"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_text = source_config.read_text(encoding="utf-8")
+            config_text = config_text.replace(
+                'results-root = "results/aggregation-pilot/runs"',
+                f"results-root = {json.dumps(str(root / 'runs'))}",
+            ).replace(
+                'state-path = "results/aggregation-pilot/benchmark_state.json"',
+                f"state-path = {json.dumps(str(root / 'state.json'))}",
             )
+            config_path = root / "pilot.toml"
+            config_path.write_text(config_text, encoding="utf-8")
+
+            with contextlib.redirect_stdout(output):
+                exit_code = main(["--config", str(config_path), "--dry-run"])
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(output.getvalue().count("[PENDING]"), 18)
