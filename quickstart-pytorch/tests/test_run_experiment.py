@@ -320,6 +320,30 @@ class RunnerConfigurationTests(unittest.TestCase):
 
 
 class RunnerProcessTests(unittest.TestCase):
+    def test_run_and_capture_discovers_tools_installed_next_to_python(self):
+        """Catch runners that forget the invoking virtualenv's bin directory."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bin_dir = root / "venv" / "bin"
+            bin_dir.mkdir(parents=True)
+            runtime_dir = root / "runtime"
+            runtime_dir.mkdir()
+            runtime_python = runtime_dir / "python"
+            runtime_python.touch()
+            python_path = bin_dir / "python"
+            python_path.symlink_to(runtime_python)
+            tool_path = bin_dir / "flwr"
+            tool_path.write_text("#!/bin/sh\necho sibling-tool\n", encoding="utf-8")
+            tool_path.chmod(0o755)
+            log = root / "console.log"
+
+            with patch("scripts.run_experiment.sys.executable", str(python_path)):
+                with patch.dict(os.environ, {"PATH": "/usr/bin:/bin"}, clear=False):
+                    code = run_and_capture(["flwr"], root, log)
+
+            self.assertEqual(code, 0)
+            self.assertEqual(log.read_text(encoding="utf-8").strip(), "sibling-tool")
+
     def test_run_and_capture_strips_ansi_and_returns_child_code(self):
         with tempfile.TemporaryDirectory() as directory:
             log = Path(directory) / "console.log"

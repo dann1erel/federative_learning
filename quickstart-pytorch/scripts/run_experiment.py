@@ -196,10 +196,17 @@ def run_and_capture(
     """Run one child process while teeing terminal output to a plain-text log."""
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    child_environment = os.environ.copy()
+    interpreter_bin = str(Path(sys.executable).parent)
+    existing_path = child_environment.get("PATH", "")
+    child_environment["PATH"] = (
+        interpreter_bin if not existing_path else f"{existing_path}{os.pathsep}{interpreter_bin}"
+    )
     with log_path.open("w", encoding="utf-8") as log:
         child = subprocess.Popen(
             list(command),
             cwd=Path(cwd),
+            env=child_environment,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
