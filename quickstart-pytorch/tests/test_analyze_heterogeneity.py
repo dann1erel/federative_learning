@@ -1,4 +1,6 @@
 import csv
+import subprocess
+import sys
 import tempfile
 import unittest
 from argparse import Namespace
@@ -17,6 +19,17 @@ from scripts.analyze_heterogeneity import (
 
 
 class HeterogeneityAnalysisTests(unittest.TestCase):
+    def test_analyzer_is_directly_executable_from_project_root(self):
+        project_root = Path(__file__).resolve().parents[1]
+        completed = subprocess.run(
+            [sys.executable, "scripts/analyze_heterogeneity.py", "--help"],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def test_scenario_slug_is_stable_and_includes_partition_identity(self):
         self.assertEqual(
             scenario_slug("ham10000", "dirichlet", 0.5, 42, 10),

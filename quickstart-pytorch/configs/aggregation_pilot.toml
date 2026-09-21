@@ -1,0 +1,39 @@
+[benchmark]
+id = "aggregation-pilot"
+results-root = "results/aggregation-pilot/runs"
+state-path = "results/aggregation-pilot/benchmark_state.json"
+continue-on-error = true
+strategies = [
+  "fedavg",
+  "fedavgm",
+  "fedprox",
+  "fedadam",
+  "fedyogi",
+  "fedadagrad",
+  "fednova",
+  "scaffold",
+  "moon",
+]
+seeds = [42]
+num-clients = 10
+rounds = 3
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.01
+dirichlet-min-partition-size = 50
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.5"
+dataset = "cifar10"
+dataset-root = "data/ham10000"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.5
+class-weighting = "none"
+
+[[scenarios]]
+id = "ham10000-dirichlet-a0.5"
+dataset = "ham10000"
+dataset-root = "data/ham10000"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.5
+class-weighting = "balanced"

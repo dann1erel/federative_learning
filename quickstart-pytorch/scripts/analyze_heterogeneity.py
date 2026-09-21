@@ -5,17 +5,21 @@ from __future__ import annotations
 
 import argparse
 import csv
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from pytorchexample.heterogeneity import build_heterogeneity_rows, summarize
 from pytorchexample.heterogeneity_plots import generate_heterogeneity_plots
 from pytorchexample.task import PartitionCounts, load_partition_counts
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCOPE = "client_partition_pre_validation"
 CSV_FIELDS = (
     "dataset",
