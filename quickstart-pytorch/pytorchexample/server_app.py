@@ -29,6 +29,13 @@ from pytorchexample.task import (
 app = ServerApp()
 
 
+def initialize_global_arrays(num_classes: int, seed: int) -> ArrayRecord:
+    """Create reproducible initial model parameters for one experiment."""
+    torch.manual_seed(seed)
+    global_model = Net(num_classes=num_classes)
+    return ArrayRecord(global_model.state_dict())
+
+
 def create_recorder(
     context: Context, class_names: Sequence[str]
 ) -> ExperimentRecorder | None:
@@ -55,8 +62,10 @@ def main(grid: Grid, context: Context) -> None:
     recorder = create_recorder(context, dataset_spec.class_names)
 
     # Загружаем глобальную модель
-    global_model = Net(num_classes=dataset_spec.num_classes)
-    arrays = ArrayRecord(global_model.state_dict())
+    arrays = initialize_global_arrays(
+        num_classes=dataset_spec.num_classes,
+        seed=int(context.run_config["seed"]),
+    )
 
     selected_strategy = strategy_name(context.run_config)
     strategy = create_strategy(

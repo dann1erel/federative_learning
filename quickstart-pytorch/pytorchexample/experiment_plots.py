@@ -5,6 +5,9 @@ import json
 from pathlib import Path
 from typing import Mapping, Sequence
 
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 

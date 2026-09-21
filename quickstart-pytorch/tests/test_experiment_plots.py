@@ -1,4 +1,7 @@
 import csv
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,6 +19,24 @@ from pytorchexample.experiment_plots import generate_artifacts, write_summary
 
 
 class ExperimentPlotTests(unittest.TestCase):
+    def test_plot_module_forces_non_interactive_agg_backend(self):
+        environment = dict(os.environ)
+        environment["MPLBACKEND"] = "svg"
+
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import pytorchexample.experiment_plots as p; print(p.plt.get_backend())",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=environment,
+        )
+
+        self.assertEqual(completed.stdout.strip().lower(), "agg")
+
     def test_summary_links_saved_final_model(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
