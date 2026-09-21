@@ -57,6 +57,19 @@ class DatasetSpec:
         return len(self.class_names)
 
 
+@dataclass(frozen=True)
+class PartitionCounts:
+    """Label-only statistics for the exact pre-validation client partitions."""
+
+    class_names: tuple[str, ...]
+    class_counts: tuple[tuple[int, ...], ...]
+    unique_group_counts: tuple[int, ...] | None = None
+
+    @property
+    def sample_counts(self) -> tuple[int, ...]:
+        return tuple(sum(counts) for counts in self.class_counts)
+
+
 DATASET_SPECS = {
     "cifar10": DatasetSpec(
         name="cifar10",
@@ -332,22 +345,17 @@ def create_partitioner(
     )
 
 
-def load_data(
-    partition_id: int,
+def _get_partition_source(
+    *,
     num_partitions: int,
-    batch_size: int,
-    dataset_name: str = "cifar10",
-    dataset_root: str | Path = "data/ham10000",
-    partitioner_name: str = "dirichlet",
-    dirichlet_alpha: float = 0.5,
-    min_partition_size: int = 50,
-    seed: int = 42,
-    validation_ratio: float = 0.2,
+    dataset_name: str,
+    dataset_root: str | Path,
+    partitioner_name: str,
+    dirichlet_alpha: float,
+    min_partition_size: int,
+    seed: int,
 ):
-    """Загружает один воспроизводимый раздел клиента из любого поддерживаемого набора данных."""
-    if not 0 < validation_ratio < 1:
-        raise ValueError("validation_ratio must be between zero and one")
-
+    """Return the cached partition source shared by training and analysis."""
     spec = get_dataset_spec(dataset_name)
     normalized_name = partitioner_name.strip().lower()
     if normalized_name == "natural" and spec.name != "ham10000":
@@ -399,8 +407,84 @@ def load_data(
                 partitioner.dataset = train_dataset.shuffle(seed=seed)
                 source = partitioner
         _partition_source_cache[cache_key] = source
+    return _partition_source_cache[cache_key]
 
-    partition = _partition_source_cache[cache_key].load_partition(partition_id)
+
+def load_partition_counts(
+    num_partitions: int,
+    dataset_name: str = "cifar10",
+    dataset_root: str | Path = "data/ham10000",
+    partitioner_name: str = "dirichlet",
+    dirichlet_alpha: float = 0.5,
+    min_partition_size: int = 50,
+    seed: int = 42,
+) -> PartitionCounts:
+    """Count labels in complete client partitions without decoding images."""
+    if num_partitions <= 0:
+        raise ValueError("num_partitions must be positive")
+    spec = get_dataset_spec(dataset_name)
+    source = _get_partition_source(
+        num_partitions=num_partitions,
+        dataset_name=dataset_name,
+        dataset_root=dataset_root,
+        partitioner_name=partitioner_name,
+        dirichlet_alpha=dirichlet_alpha,
+        min_partition_size=min_partition_size,
+        seed=seed,
+    )
+    class_counts = []
+    group_counts = [] if spec.group_column else None
+    for partition_id in range(num_partitions):
+        partition = source.load_partition(partition_id)
+        counts = [0] * spec.num_classes
+        for raw_label in partition["label"]:
+            label = int(raw_label)
+            if not 0 <= label < spec.num_classes:
+                raise ValueError(
+                    f"Partition {partition_id} contains out-of-range label {label}"
+                )
+            counts[label] += 1
+        if not sum(counts):
+            raise ValueError(f"Partition {partition_id} is empty")
+        class_counts.append(tuple(counts))
+        if group_counts is not None:
+            group_counts.append(
+                len({str(value) for value in partition[spec.group_column]})
+            )
+    return PartitionCounts(
+        class_names=spec.class_names,
+        class_counts=tuple(class_counts),
+        unique_group_counts=tuple(group_counts) if group_counts is not None else None,
+    )
+
+
+def load_data(
+    partition_id: int,
+    num_partitions: int,
+    batch_size: int,
+    dataset_name: str = "cifar10",
+    dataset_root: str | Path = "data/ham10000",
+    partitioner_name: str = "dirichlet",
+    dirichlet_alpha: float = 0.5,
+    min_partition_size: int = 50,
+    seed: int = 42,
+    validation_ratio: float = 0.2,
+):
+    """Загружает один воспроизводимый раздел клиента из любого поддерживаемого набора данных."""
+    if not 0 < validation_ratio < 1:
+        raise ValueError("validation_ratio must be between zero and one")
+
+    spec = get_dataset_spec(dataset_name)
+    source = _get_partition_source(
+        num_partitions=num_partitions,
+        dataset_name=dataset_name,
+        dataset_root=dataset_root,
+        partitioner_name=partitioner_name,
+        dirichlet_alpha=dirichlet_alpha,
+        min_partition_size=min_partition_size,
+        seed=seed,
+    )
+    partition = source.load_partition(partition_id)
     # Официальный тестовый раздел остаётся централизованным; только обучающий
     # раздел клиента делится на локальные обучающее и валидационное подмножества.
     if spec.group_column:

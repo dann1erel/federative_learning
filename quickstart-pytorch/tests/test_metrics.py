@@ -23,6 +23,7 @@ from pytorchexample.task import (
     get_dataset_spec,
     grouped_train_test_split,
     load_data,
+    load_partition_counts,
     metrics_for_flower,
     metrics_from_confusion_matrix,
     resolve_dataset_id,
@@ -375,6 +376,98 @@ class MetricsTest(unittest.TestCase):
 
 
 class PartitionerTest(unittest.TestCase):
+    def tearDown(self):
+        from pytorchexample import task
+
+        task._partition_source_cache.clear()
+        task._local_split_cache.clear()
+
+    def test_partition_counts_include_labels_and_unique_groups_without_images(self):
+        partitions = {
+            0: Dataset.from_dict(
+                {
+                    "label": [0, 0, 1],
+                    "lesion_id": ["a", "a", "b"],
+                    "img": ["must-not-open-0", "must-not-open-1", "must-not-open-2"],
+                }
+            ),
+            1: Dataset.from_dict(
+                {
+                    "label": [1, 1],
+                    "lesion_id": ["c", "d"],
+                    "img": ["must-not-open-3", "must-not-open-4"],
+                }
+            ),
+        }
+        source = Mock()
+        source.load_partition.side_effect = partitions.__getitem__
+
+        with patch("pytorchexample.task._get_partition_source", return_value=source):
+            summary = load_partition_counts(
+                num_partitions=2,
+                dataset_name="ham10000",
+                dataset_root="unused",
+                partitioner_name="dirichlet",
+                dirichlet_alpha=0.5,
+                min_partition_size=1,
+                seed=42,
+            )
+
+        self.assertEqual(summary.class_counts[0][:2], (2, 1))
+        self.assertEqual(summary.class_counts[1][:2], (0, 2))
+        self.assertEqual(summary.sample_counts, (3, 2))
+        self.assertEqual(summary.unique_group_counts, (2, 2))
+        self.assertEqual(source.load_partition.call_count, 2)
+
+    def test_partition_counts_and_load_data_share_source_configuration_and_cache(self):
+        partition = Dataset.from_dict(
+            {
+                "label": list(range(10)) * 2,
+                "img": ["unused"] * 20,
+            }
+        )
+        source = Mock()
+        source.load_partition.return_value = partition
+        partitioner = object()
+
+        with (
+            patch("pytorchexample.task.create_partitioner", return_value=partitioner) as create,
+            patch("pytorchexample.task.FederatedDataset", return_value=source) as federated,
+        ):
+            summary = load_partition_counts(
+                num_partitions=2,
+                dataset_name="cifar10",
+                partitioner_name="dirichlet",
+                dirichlet_alpha=0.25,
+                min_partition_size=7,
+                seed=13,
+            )
+            load_data(
+                partition_id=0,
+                num_partitions=2,
+                batch_size=4,
+                dataset_name="cifar10",
+                partitioner_name="dirichlet",
+                dirichlet_alpha=0.25,
+                min_partition_size=7,
+                seed=13,
+            )
+
+        self.assertEqual(summary.class_counts[0], (2,) * 10)
+        create.assert_called_once_with(
+            name="dirichlet",
+            num_partitions=2,
+            dirichlet_alpha=0.25,
+            min_partition_size=7,
+            seed=13,
+        )
+        federated.assert_called_once_with(
+            dataset="uoft-cs/cifar10",
+            partitioners={"train": partitioner},
+            shuffle=True,
+            seed=13,
+        )
+
     def test_local_candidate_manifest_loads_as_rgb_batch(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
