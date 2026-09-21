@@ -10,7 +10,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from datasets import Dataset, Image, load_dataset
+from datasets import Dataset, DatasetDict, Image, load_dataset, load_from_disk
 from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import (
     DirichletPartitioner,
@@ -148,6 +148,7 @@ class Net(nn.Module):
 # использовали одно и то же детерминированное разделение.
 _partition_source_cache: dict[tuple, object] = {}
 _local_split_cache: dict[tuple[str, str], Dataset] = {}
+_local_dataset_dict_cache: dict[str, DatasetDict] = {}
 
 
 @lru_cache(maxsize=None)
@@ -225,6 +226,22 @@ def load_local_split(dataset_root: str | Path, split: str) -> Dataset:
     dataset = Dataset.from_dict(columns).cast_column("img", Image())
     _local_split_cache[cache_key] = dataset
     return dataset
+
+
+def load_local_dataset_dict(dataset_root: str | Path) -> DatasetDict:
+    """Load a prepared Hugging Face DatasetDict from a project data directory."""
+    root = resolve_dataset_root(dataset_root).resolve()
+    key = str(root)
+    if key not in _local_dataset_dict_cache:
+        if not (root / "dataset_dict.json").is_file():
+            raise FileNotFoundError(f"Missing prepared DatasetDict in {root}")
+        dataset = load_from_disk(key)
+        if not isinstance(dataset, DatasetDict) or not {"train", "test"}.issubset(
+            dataset
+        ):
+            raise ValueError(f"{root} must contain DatasetDict train and test splits")
+        _local_dataset_dict_cache[key] = dataset
+    return _local_dataset_dict_cache[key]
 
 
 class GroupedPartitionSource:
@@ -360,7 +377,13 @@ def _get_partition_source(
     normalized_name = partitioner_name.strip().lower()
     if normalized_name == "natural" and spec.name != "ham10000":
         raise ValueError("The natural partitioner is available only for HAM10000")
-    source_id = spec.dataset_id or str(resolve_dataset_root(dataset_root).resolve())
+    resolved_root = resolve_dataset_root(dataset_root).resolve()
+    has_local_dataset_dict = (resolved_root / "dataset_dict.json").is_file()
+    source_id = (
+        str(resolved_root)
+        if has_local_dataset_dict or spec.dataset_id is None
+        else spec.dataset_id
+    )
     cache_key = (
         spec.name,
         source_id,
@@ -378,7 +401,11 @@ def _get_partition_source(
             min_partition_size=min_partition_size,
             seed=seed,
         )
-        if spec.dataset_id is not None:
+        if has_local_dataset_dict:
+            train_dataset = load_local_dataset_dict(resolved_root)["train"]
+            partitioner.dataset = train_dataset.shuffle(seed=seed)
+            source = partitioner
+        elif spec.dataset_id is not None:
             source = FederatedDataset(
                 dataset=spec.dataset_id,
                 partitioners={"train": partitioner},
@@ -519,7 +546,10 @@ def load_centralized_dataset(
 ):
     """Загружает тестовый набор и возвращает загрузчик данных."""
     spec = get_dataset_spec(dataset_name)
-    if spec.dataset_id is not None:
+    resolved_root = resolve_dataset_root(dataset_root).resolve()
+    if (resolved_root / "dataset_dict.json").is_file():
+        test_dataset = load_local_dataset_dict(resolved_root)["test"]
+    elif spec.dataset_id is not None:
         test_dataset = load_dataset(spec.dataset_id, split="test")
     else:
         test_dataset = load_local_split(dataset_root, "test")

@@ -25,7 +25,7 @@ dirichlet-min-partition-size = 50
 [[scenarios]]
 id = "cifar10-dirichlet-a0.5"
 dataset = "cifar10"
-dataset-root = "data/ham10000"
+dataset-root = "data/cifar10"
 partitioner = "dirichlet"
 dirichlet-alpha = 0.5
 class-weighting = "none"

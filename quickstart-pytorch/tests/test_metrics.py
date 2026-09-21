@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import torch
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
 from flwr.app import ArrayRecord, ConfigRecord, Context, Message, MetricRecord, RecordDict
 from flwr_datasets.partitioner import (
     DirichletPartitioner,
@@ -23,6 +23,7 @@ from pytorchexample.task import (
     get_dataset_spec,
     grouped_train_test_split,
     load_data,
+    load_centralized_dataset,
     load_partition_counts,
     metrics_for_flower,
     metrics_from_confusion_matrix,
@@ -381,6 +382,7 @@ class PartitionerTest(unittest.TestCase):
 
         task._partition_source_cache.clear()
         task._local_split_cache.clear()
+        task._local_dataset_dict_cache.clear()
 
     def test_partition_counts_include_labels_and_unique_groups_without_images(self):
         partitions = {
@@ -467,6 +469,41 @@ class PartitionerTest(unittest.TestCase):
             shuffle=True,
             seed=13,
         )
+
+    def test_local_cifar_dataset_dict_avoids_hub_for_partitions_and_test_split(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "dataset_dict.json").write_text("{}", encoding="utf-8")
+            local = DatasetDict(
+                {
+                    "train": Dataset.from_dict(
+                        {"label": list(range(10)) * 2, "img": ["unused"] * 20}
+                    ),
+                    "test": Dataset.from_dict(
+                        {"label": [0, 1], "img": ["unused", "unused"]}
+                    ),
+                }
+            )
+
+            with (
+                patch("pytorchexample.task.load_from_disk", return_value=local) as load_local,
+                patch(
+                    "pytorchexample.task.FederatedDataset",
+                    side_effect=AssertionError("Hub source must not be constructed"),
+                ),
+            ):
+                summary = load_partition_counts(
+                    num_partitions=2,
+                    dataset_name="cifar10",
+                    dataset_root=root,
+                    partitioner_name="iid",
+                    seed=42,
+                )
+                centralized = load_centralized_dataset("cifar10", root)
+
+            self.assertEqual(summary.sample_counts, (10, 10))
+            self.assertEqual(len(centralized.dataset), 2)
+            load_local.assert_called_once_with(str(root.resolve()))
 
     def test_local_candidate_manifest_loads_as_rgb_batch(self):
         with tempfile.TemporaryDirectory() as temp_dir:

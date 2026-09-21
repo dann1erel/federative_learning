@@ -1,0 +1,442 @@
+dataset,partitioner,dirichlet_alpha,seed,num_clients,scope,client_id,class_id,reference,metric,statistic,value,units,notes
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_max,value,7754,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_max_to_min_ratio,value,4.970512820512821,ratio,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_mean,value,5000.0,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_min,value,1560,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_std,value,2139.9840186319148,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,quantity_coefficient_of_variation,value,0.42799680372638294,ratio,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,quantity_effective_clients,value,8.45179035897918,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,quantity_gini,value,0.242984,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,,quantity_jain_fairness,value,0.8451790358979181,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,max,0.09999999999999998,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,mean,0.009999999999999998,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,median,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,min,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,std,0.029999999999999992,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,weighted_mean,0.013457999999999998,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,max,0.6231347834925798,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,mean,0.45229226519759413,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,median,0.44111415408785004,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,min,0.3594267634468639,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,std,0.07990797744297892,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,weighted_mean,0.43989,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,max,2.3688141923436032,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,mean,1.3175300652020363,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,median,1.0114549292865105,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,min,0.7999999999999998,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,std,0.5648389452851801,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,weighted_mean,1.274924,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,global_class_gini,value,0.0,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,global_majority_to_minority_ratio,value,1.0,ratio,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,global_normalized_label_entropy,value,0.9999999999999998,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,max,0.5064425559743,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,mean,0.4119240921823618,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,median,0.4050966534164524,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,min,0.34994023414125247,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,std,0.05170071280393903,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,weighted_mean,0.40603217491595023,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,max,0.5742667274878992,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,mean,0.47152323927489703,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,median,0.46333833557418674,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,min,0.4061421060067718,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,std,0.05825123567956756,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,weighted_mean,0.464077629497833,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,max,0.9403485251020074,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,mean,0.6023648890330724,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,median,0.5359938279520926,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,min,0.4130127839575279,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,std,0.1826109765308969,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,weighted_mean,0.5822583444570959,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,max,0.5742667274878992,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,mean,0.4664598307433076,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,median,0.445897712368633,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,min,0.4061421060067718,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,std,0.060511931935888226,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,weighted_mean,0.4572632942960199,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,max,0.6231347834925798,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,mean,0.45229226519759413,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,median,0.44111415408785004,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,min,0.3594267634468639,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,std,0.07990797744297892,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,weighted_mean,0.43989,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,max,0.7695932357451564,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,mean,0.5736351223341617,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,median,0.5766998379929686,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,min,0.31416901683729964,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,std,0.11450330824706334,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,max,0.8468990582948506,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,mean,0.6403498408713532,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,median,0.637415621551006,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,min,0.3617657852228905,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,std,0.12061168886878378,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,max,0.8778005178040731,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,mean,0.6247671576311407,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,median,0.6495953957656091,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,min,0.3396543349893978,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,std,0.14235071154877904,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,,uniform_label_distribution,global_qcid,value,0.0,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,0,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,0,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,1,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,1,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,2,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,2,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,3,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,3,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,4,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,4,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,5,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,5,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,6,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,6,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,7,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,7,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,8,,client_coverage_count,value,10,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,8,,client_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,9,,client_coverage_count,value,9,clients,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,,9,,client_coverage_fraction,value,0.9,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,,client_sample_count,value,7528,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,client_label_distribution,client_normalized_label_entropy,value,0.796285892381235,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,categorical_wasserstein_to_global,value,0.3707226354941552,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,1.6291179596174281,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,hellinger_to_global,value,0.35275168246797545,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,jensen_shannon_to_global,value,0.41073689005482167,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,kl_to_global,value,0.46906906742481497,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,present_label_js,value,0.41073689005482167,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,total_variation_to_global,value,0.3707226354941552,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,,class_coverage_fraction,value,0.9,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,,client_sample_count,value,6729,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,,missing_class_fraction,value,0.09999999999999998,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,,represented_class_count,value,9,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,client_label_distribution,client_normalized_label_entropy,value,0.7730438154780597,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,categorical_wasserstein_to_global,value,0.42508545103284295,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.9098677366622083,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,hellinger_to_global,value,0.4277358547780711,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,jensen_shannon_to_global,value,0.467796056828368,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,kl_to_global,value,0.5225859272032961,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,present_label_js,value,0.4171619715124737,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,total_variation_to_global,value,0.42508545103284295,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,,client_sample_count,value,1560,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,client_label_distribution,client_normalized_label_entropy,value,0.6952559160868991,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,categorical_wasserstein_to_global,value,0.5217948717948718,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.7999999999999998,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,hellinger_to_global,value,0.4339837998722429,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,jensen_shannon_to_global,value,0.5056396845832586,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,kl_to_global,value,0.7016991847802551,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,present_label_js,value,0.5056396845832586,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,total_variation_to_global,value,0.5217948717948718,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,,client_sample_count,value,7754,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,client_label_distribution,client_normalized_label_entropy,value,0.7901640316329293,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,categorical_wasserstein_to_global,value,0.39357750838277017,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.9241423781274178,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,hellinger_to_global,value,0.366048845056481,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,jensen_shannon_to_global,value,0.423231628441106,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,kl_to_global,value,0.4831651727241038,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,present_label_js,value,0.423231628441106,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,total_variation_to_global,value,0.39357750838277017,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,,client_sample_count,value,5373,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,client_label_distribution,client_normalized_label_entropy,value,0.8046671421231976,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,categorical_wasserstein_to_global,value,0.3594267634468639,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,1.348687883863764,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,hellinger_to_global,value,0.3798136343207716,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,jensen_shannon_to_global,value,0.4293207546680816,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,kl_to_global,value,0.4497705267051903,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,present_label_js,value,0.4293207546680816,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,total_variation_to_global,value,0.3594267634468639,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,,client_sample_count,value,4919,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,client_label_distribution,client_normalized_label_entropy,value,0.5916118244731803,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,categorical_wasserstein_to_global,value,0.6231347834925798,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,2.3113031103882906,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,hellinger_to_global,value,0.49233100837961846,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,jensen_shannon_to_global,value,0.5714218735302902,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,kl_to_global,value,0.9403485251020074,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,present_label_js,value,0.5714218735302902,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,total_variation_to_global,value,0.6231347834925798,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,,client_sample_count,value,4219,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,client_label_distribution,client_normalized_label_entropy,value,0.5959216463567886,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,categorical_wasserstein_to_global,value,0.5281583313581417,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,1.0987674804456034,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,hellinger_to_global,value,0.5064425559743,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,jensen_shannon_to_global,value,0.5742667274878992,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,kl_to_global,value,0.9304247934764744,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,present_label_js,value,0.5742667274878992,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,total_variation_to_global,value,0.5281583313581417,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,,client_sample_count,value,2882,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,client_label_distribution,client_normalized_label_entropy,value,0.8206308269671236,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,categorical_wasserstein_to_global,value,0.3848716169326857,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.9179042331714086,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,hellinger_to_global,value,0.34994023414125247,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,jensen_shannon_to_global,value,0.4061421060067718,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,kl_to_global,value,0.4130127839575279,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,present_label_js,value,0.4061421060067718,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,total_variation_to_global,value,0.3848716169326857,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,,client_sample_count,value,6894,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,client_label_distribution,client_normalized_label_entropy,value,0.754983569559595,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,categorical_wasserstein_to_global,value,0.4590078328981723,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.8666956774006385,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,hellinger_to_global,value,0.4017980201802835,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,jensen_shannon_to_global,value,0.4624746700691844,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,kl_to_global,value,0.5641711802561649,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,present_label_js,value,0.4624746700691844,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,total_variation_to_global,value,0.4590078328981723,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,,class_coverage_fraction,value,1.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,,client_sample_count,value,2142,samples,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,,missing_class_fraction,value,0.0,fraction,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,,represented_class_count,value,10,classes,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,client_label_distribution,client_normalized_label_entropy,value,0.7613978608701398,,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,categorical_wasserstein_to_global,value,0.45714285714285713,distance,With zero/one categorical ground cost this equals total variation.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,2.3688141923436032,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,hellinger_to_global,value,0.40839528665262126,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,jensen_shannon_to_global,value,0.4642020010791891,distance,
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,kl_to_global,value,0.5494017287008892,distance,Forward KL uses additive smoothing epsilon=1e-12.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,present_label_js,value,0.4642020010791891,distance,Global distribution is restricted and renormalized to labels present at the client.
+cifar10,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,total_variation_to_global,value,0.45714285714285713,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_max,value,3999,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_max_to_min_ratio,value,33.60504201680672,ratio,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_mean,value,1001.5,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_min,value,119,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,client_samples_std,value,1100.361236140205,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,quantity_coefficient_of_variation,value,1.0987131663906191,ratio,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,quantity_effective_clients,value,4.530687342575342,clients,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,quantity_gini,value,0.4893959061407888,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,,quantity_jain_fairness,value,0.45306873425753424,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,max,0.1428571428571429,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,mean,0.05714285714285716,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,median,0.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,min,0.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,std,0.06998542122237654,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,all_classes,coverage_deficiency,weighted_mean,0.04828471578346767,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,max,0.8170512397493724,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,mean,0.39734119287624425,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,median,0.3267218912731227,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,min,0.150694731541656,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,std,0.21158993804714663,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,categorical_wasserstein_to_global,weighted_mean,0.3144778289380707,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,max,2.0140456385639465,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,mean,0.919250574097414,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,median,0.896160525955001,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,min,0.2001949797366987,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,std,0.5039423702093689,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,weighted_mean,0.7361179100046885,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,global_class_gini,value,0.6414378432351473,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,global_majority_to_minority_ratio,value,58.30434782608695,ratio,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,global_normalized_label_entropy,value,0.5812395994376119,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,max,0.7025236928320143,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,mean,0.3584198505559349,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,median,0.30638780624718565,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,min,0.19572568689802847,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,std,0.1558891694864448,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,hellinger_to_global,weighted_mean,0.300533929277713,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,max,0.7848937262579572,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,mean,0.4130486667015508,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,median,0.35171216868971805,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,min,0.22673155962675892,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,std,0.17387777134301888,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,jensen_shannon_to_global,weighted_mean,0.3465962170280029,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,max,1.8555786880905603,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,mean,0.5774116641212234,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,median,0.3659294383127242,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,min,0.11939664065647333,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,std,0.5208854906578475,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,kl_to_global,weighted_mean,0.39253352427530885,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,max,0.7848937262579572,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,mean,0.4089116241638283,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,median,0.3381958728324286,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,min,0.22673155962675892,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,std,0.1750408320804609,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,present_label_js,weighted_mean,0.3433533085472088,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,max,0.8170512397493724,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,mean,0.39734119287624425,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,median,0.3267218912731227,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,min,0.150694731541656,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,std,0.21158993804714663,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,global_label_distribution,total_variation_to_global,weighted_mean,0.3144778289380707,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,max,0.8660377824981851,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,mean,0.4943062797629007,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,median,0.4377356315917457,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,min,0.13570027200393045,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_hellinger,std,0.20004746065034926,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,max,0.9347231211598976,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,mean,0.5549238371068146,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,median,0.4993339553751636,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,min,0.1486457672520268,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_jensen_shannon,std,0.21493344334669,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,max,0.9587484017308262,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,mean,0.5479837163964175,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,median,0.5128494322521513,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,min,0.04933709941055196,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,pairwise_clients,pairwise_total_variation,std,0.24558272790671482,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,uniform_label_distribution,global_qcid,value,0.33379292447819964,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,unique_dataset_groups,unique_group_count,max,3164.0,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,unique_dataset_groups,unique_group_count,mean,747.0,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,unique_dataset_groups,unique_group_count,median,424.0,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,unique_dataset_groups,unique_group_count,min,82.0,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,,unique_dataset_groups,unique_group_count,std,887.3795129480959,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,0,,client_coverage_count,value,9,clients,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,0,,client_coverage_fraction,value,0.9,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,1,,client_coverage_count,value,10,clients,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,1,,client_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,2,,client_coverage_count,value,10,clients,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,2,,client_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,3,,client_coverage_count,value,8,clients,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,3,,client_coverage_fraction,value,0.8,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,4,,client_coverage_count,value,10,clients,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,4,,client_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,5,,client_coverage_count,value,10,clients,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,5,,client_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,6,,client_coverage_count,value,9,clients,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,,6,,client_coverage_fraction,value,0.9,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,,class_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,,client_sample_count,value,826,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,,missing_class_fraction,value,0.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,,represented_class_count,value,7,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,client_label_distribution,client_normalized_label_entropy,value,0.7472717567067587,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,categorical_wasserstein_to_global,value,0.6285713076873793,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,2.0140456385639465,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,hellinger_to_global,value,0.5278476525969131,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,jensen_shannon_to_global,value,0.6074921029397614,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,kl_to_global,value,1.0305725713520064,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,present_label_js,value,0.6074921029397614,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,global_label_distribution,total_variation_to_global,value,0.6285713076873793,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,0,,unique_dataset_groups,unique_group_count,value,534,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,,class_coverage_fraction,value,0.8571428571428571,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,,client_sample_count,value,682,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,,missing_class_fraction,value,0.1428571428571429,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,,represented_class_count,value,6,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,client_label_distribution,client_normalized_label_entropy,value,0.582920622193031,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,categorical_wasserstein_to_global,value,0.19363608546125094,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.4625731490740429,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,hellinger_to_global,value,0.26873032475475755,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,jensen_shannon_to_global,value,0.3083285095587223,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,kl_to_global,value,0.2676946786737734,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,present_label_js,value,0.29963676956784524,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,global_label_distribution,total_variation_to_global,value,0.19363608546125094,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,1,,unique_dataset_groups,unique_group_count,value,522,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,,class_coverage_fraction,value,0.8571428571428571,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,,client_sample_count,value,309,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,,missing_class_fraction,value,0.1428571428571429,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,,represented_class_count,value,6,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,client_label_distribution,client_normalized_label_entropy,value,0.4859603586348721,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,categorical_wasserstein_to_global,value,0.3582865184424011,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.79822240748909,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,hellinger_to_global,value,0.34404528773961374,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,jensen_shannon_to_global,value,0.3950958278207138,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,kl_to_global,value,0.4641641979516749,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,present_label_js,value,0.37675497609701186,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,global_label_distribution,total_variation_to_global,value,0.3582865184424011,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,2,,unique_dataset_groups,unique_group_count,value,219,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,,class_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,,client_sample_count,value,3999,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,,missing_class_fraction,value,0.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,,represented_class_count,value,7,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,client_label_distribution,client_normalized_label_entropy,value,0.24006270609652489,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,categorical_wasserstein_to_global,value,0.2309994622969272,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.5527076227369374,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,hellinger_to_global,value,0.2250336707718015,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,jensen_shannon_to_global,value,0.2634618844735246,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,kl_to_global,value,0.16549540604047197,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,present_label_js,value,0.2634618844735246,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,global_label_distribution,total_variation_to_global,value,0.2309994622969272,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,3,,unique_dataset_groups,unique_group_count,value,3164,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,,class_coverage_fraction,value,0.8571428571428571,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,,client_sample_count,value,1916,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,,missing_class_fraction,value,0.1428571428571429,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,,represented_class_count,value,6,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,client_label_distribution,client_normalized_label_entropy,value,0.2472755981877512,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,categorical_wasserstein_to_global,value,0.22185787081382108,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.5739365377820533,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,hellinger_to_global,value,0.24924175371212842,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,jensen_shannon_to_global,value,0.2838357165313232,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,kl_to_global,value,0.18287556115246117,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,present_label_js,value,0.2740796983894548,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,global_label_distribution,total_variation_to_global,value,0.22185787081382108,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,4,,unique_dataset_groups,unique_group_count,value,1504,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,,class_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,,client_sample_count,value,119,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,,missing_class_fraction,value,0.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,,represented_class_count,value,7,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,client_label_distribution,client_normalized_label_entropy,value,0.742738144090728,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,categorical_wasserstein_to_global,value,0.48651140935655335,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,1.4648934161782532,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,hellinger_to_global,value,0.3689760754159001,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,jensen_shannon_to_global,value,0.4361664158261543,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,kl_to_global,value,0.5746075286905389,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,present_label_js,value,0.4361664158261543,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,global_label_distribution,total_variation_to_global,value,0.48651140935655335,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,5,,unique_dataset_groups,unique_group_count,value,82,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,,class_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,,client_sample_count,value,578,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,,missing_class_fraction,value,0.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,,represented_class_count,value,7,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,client_label_distribution,client_normalized_label_entropy,value,0.22223581557242494,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,categorical_wasserstein_to_global,value,0.8170512397493724,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.9940986444209119,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,hellinger_to_global,value,0.7025236928320143,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,jensen_shannon_to_global,value,0.7848937262579572,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,kl_to_global,value,1.8555786880905603,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,present_label_js,value,0.7848937262579572,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,global_label_distribution,total_variation_to_global,value,0.8170512397493724,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,6,,unique_dataset_groups,unique_group_count,value,326,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,,class_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,,client_sample_count,value,698,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,,missing_class_fraction,value,0.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,,represented_class_count,value,7,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,client_label_distribution,client_normalized_label_entropy,value,0.4447117886617277,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,categorical_wasserstein_to_global,value,0.150694731541656,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,0.2001949797366987,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,hellinger_to_global,value,0.19572568689802847,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,jensen_shannon_to_global,value,0.22673155962675892,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,kl_to_global,value,0.11939664065647333,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,present_label_js,value,0.22673155962675892,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,global_label_distribution,total_variation_to_global,value,0.150694731541656,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,7,,unique_dataset_groups,unique_group_count,value,547,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,,class_coverage_fraction,value,0.8571428571428571,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,,client_sample_count,value,478,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,,missing_class_fraction,value,0.1428571428571429,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,,represented_class_count,value,6,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,client_label_distribution,client_normalized_label_entropy,value,0.7373084094034126,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,categorical_wasserstein_to_global,value,0.590646039309237,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,1.0860922006112168,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,hellinger_to_global,value,0.4760345723266023,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,jensen_shannon_to_global,value,0.5548013028821315,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,kl_to_global,value,0.8955675852562955,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,present_label_js,value,0.5502194873613544,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,global_label_distribution,total_variation_to_global,value,0.590646039309237,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,8,,unique_dataset_groups,unique_group_count,value,296,groups,HAM10000 groups are lesion_id values.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,,class_coverage_fraction,value,1.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,,client_sample_count,value,410,samples,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,,missing_class_fraction,value,0.0,fraction,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,,represented_class_count,value,7,classes,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,client_label_distribution,client_normalized_label_entropy,value,0.7864248686516778,,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,categorical_wasserstein_to_global,value,0.2951572641038442,distance,With zero/one categorical ground cost this equals total variation.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,diagnostic_label_index_wasserstein_to_global,value,1.0457411443809896,distance,Diagnostic only: nominal class IDs have no intrinsic ordering.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,hellinger_to_global,value,0.22603978851158937,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,jensen_shannon_to_global,value,0.26967962109846105,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,kl_to_global,value,0.2181637833479782,distance,Forward KL uses additive smoothing epsilon=1e-12.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,present_label_js,value,0.26967962109846105,distance,Global distribution is restricted and renormalized to labels present at the client.
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,global_label_distribution,total_variation_to_global,value,0.2951572641038442,distance,
+ham10000,dirichlet,0.5,42,10,client_partition_pre_validation,9,,unique_dataset_groups,unique_group_count,value,276,groups,HAM10000 groups are lesion_id values.

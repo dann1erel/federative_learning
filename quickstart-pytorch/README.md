@@ -126,15 +126,24 @@ Flower упал, остаются `experiment.json`, `environment.json` и `cons
 
 ### CIFAR-10
 
-По умолчанию приложение загружает CIFAR-10 (`uoft-cs/cifar10`) через Hugging
-Face Datasets и запускает локальную Flower-симуляцию:
+Подготовьте CIFAR-10 один раз. Скрипт загружает `uoft-cs/cifar10` и сохраняет
+локальный `DatasetDict` в `data/cifar10`, после чего обучение и анализ могут
+работать без сети:
+
+```bash
+python scripts/prepare_cifar10.py
+```
+
+Затем запустите локальную Flower-симуляцию:
 
 ```bash
 flwr run . --stream
 ```
 
-Первый запуск может занять больше времени из-за загрузки и кэширования набора
-данных.
+Если `data/cifar10/dataset_dict.json` отсутствует, приложение сохраняет
+обратную совместимость и обращается к Hugging Face Hub. Для длительной серии
+рекомендуется подготовленный локальный каталог: отдельные процессы Flower не
+будут повторно проверять или скачивать данные.
 
 ### HAM10000
 
@@ -327,6 +336,74 @@ FedNova нормализует обновления по фактическом�
 успешного построения ответа. Для нового скалярного параметра добавьте default в
 `pyproject.toml`, CLI-флаг и validator; активные значения автоматически
 попадут в `experiment.json` и `summary.md`.
+
+## Сравнение агрегаций и метрики неоднородности
+
+Пилотная матрица `configs/aggregation_pilot.toml` фиксирует разбиение
+Дирихле `alpha=0.5`, 10 клиентов, seed 42, 3 серверных раунда и одну локальную
+эпоху. Меняются только набор данных и одна из девяти стратегий. CIFAR-10
+использует `class-weighting=none`, HAM10000 — `balanced`; learning rate для
+обоих наборов равен `0.01`.
+
+Сначала измерьте фактически созданные клиентские разбиения:
+
+```bash
+python scripts/analyze_heterogeneity.py \
+  --dataset cifar10 --dataset-root data/cifar10 \
+  --partitioner dirichlet \
+  --dirichlet-alpha 0.5 --num-clients 10 --seed 42
+
+python scripts/analyze_heterogeneity.py \
+  --dataset ham10000 --dataset-root data/ham10000 \
+  --partitioner dirichlet --dirichlet-alpha 0.5 \
+  --num-clients 10 --seed 42
+```
+
+Оба вызова обновляют один файл `results/heterogeneity_metrics.csv`, не
+дублируя строки уже рассчитанного сценария. Графики записываются в
+`results/heterogeneity/<scenario>/plots/`. Расчёт использует полные клиентские
+разделы до локального train/validation split и не декодирует изображения.
+
+Основные группы показателей:
+
+- глобальный дисбаланс: entropy, Gini, majority/minority ratio и QCID;
+- перекос количества: CV, Gini, Jain index и effective client count;
+- label skew относительно глобального распределения: Jensen–Shannon,
+  Hellinger, total variation и сглаженный KL;
+- label scarcity: покрытие и доля отсутствующих классов;
+- попарные расстояния распределений клиентов.
+
+`categorical_wasserstein` использует стоимость 0 для совпадающих классов и 1
+для разных, поэтому математически равен total variation. Диагностический
+`label_index_wasserstein` сохранён отдельно: классы CIFAR-10 и HAM10000
+номинальные, и расстояние по их числовым ID меняется при простой перенумерации.
+
+Проверка матрицы, последовательный запуск с возможностью продолжения и сбор
+результатов:
+
+```bash
+python scripts/run_benchmark.py \
+  --config configs/aggregation_pilot.toml --dry-run
+
+python scripts/run_benchmark.py \
+  --config configs/aggregation_pilot.toml
+
+python scripts/collect_benchmark.py \
+  --state results/aggregation-pilot/benchmark_state.json \
+  --output results/aggregation_benchmark.csv
+```
+
+Повторный вызов runner пропускает только завершённые кейсы, чей
+`experiment.json` точно совпадает с запрошенной конфигурацией. Failed,
+aborted, незавершённые и несовпадающие запуски выполняются заново без удаления
+старых каталогов. `aggregation_benchmark.csv` содержит final/best/AUC,
+межклиентский разброс, длительность и диагностику отсутствующих артефактов.
+
+Чтобы расширить исследование, добавьте стратегии, seeds или таблицы
+`[[scenarios]]` в новый TOML-файл. Не изменяйте уже выполненную матрицу:
+другой протокол должен иметь новый `benchmark.id`, `state-path` и
+`results-root`. Трёхраундовый single-seed пилот проверяет конвейер, но выводы
+для ВКР следует подтверждать более длинными запусками и несколькими seeds.
 
 ## Наборы данных и non-IID-сценарии
 

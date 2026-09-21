@@ -39,6 +39,12 @@ def parse_args() -> argparse.Namespace:
         default=PROJECT_ROOT / "dataset_examples",
         help="Directory for the generated preview, CSV, PNG, and JSON files.",
     )
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "cifar10",
+        help="Persistent DatasetDict used by offline training and analysis.",
+    )
     parser.add_argument("--num-clients", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--samples-per-class", type=int, default=2)
@@ -228,6 +234,10 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     dataset = load_dataset(DATASET_ID)
+    data_dir = args.data_dir.resolve()
+    if not (data_dir / "dataset_dict.json").is_file():
+        data_dir.parent.mkdir(parents=True, exist_ok=True)
+        dataset.save_to_disk(str(data_dir))
     train_dataset = dataset["train"]
     test_dataset = dataset["test"]
     save_sample_grid(
@@ -277,7 +287,9 @@ def main() -> None:
         json.dump(metadata, file, ensure_ascii=False, indent=2)
         file.write("\n")
 
-    print(f"CIFAR-10 is cached by Hugging Face; examples saved to {args.output_dir}")
+    print(
+        f"CIFAR-10 saved to {data_dir}; examples saved to {args.output_dir}"
+    )
 
 
 if __name__ == "__main__":
