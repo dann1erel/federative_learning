@@ -6,9 +6,18 @@ import math
 from collections.abc import Iterable
 
 import numpy as np
-from flwr.app import Array, ArrayRecord, ConfigRecord, Message, MetricRecord, RecordDict
+from flwr.app import (
+    Array,
+    ArrayRecord,
+    ConfigRecord,
+    Message,
+    MessageType,
+    MetricRecord,
+    RecordDict,
+)
 from flwr.serverapp import Grid
 from flwr.serverapp.strategy import FedAvg
+from flwr.serverapp.strategy.strategy_utils import sample_nodes
 
 
 def _single_arrays(record: RecordDict) -> ArrayRecord:
@@ -17,10 +26,30 @@ def _single_arrays(record: RecordDict) -> ArrayRecord:
     return next(iter(record.array_records.values()))
 
 
-def _single_metrics(record: RecordDict) -> MetricRecord:
+def _protocol_metrics(
+    record: RecordDict, algorithm: str, weighting_key: str
+) -> MetricRecord:
     if len(record.metric_records) != 1:
-        raise ValueError("FedNova replies must contain exactly one metrics record")
-    return next(iter(record.metric_records.values()))
+        raise ValueError(f"{algorithm} replies must contain exactly one MetricRecord")
+    metrics = next(iter(record.metric_records.values()))
+    if weighting_key not in metrics:
+        raise ValueError(f"{algorithm} reply is missing {weighting_key}")
+    weight = metrics[weighting_key]
+    if (
+        isinstance(weight, bool)
+        or not isinstance(weight, (int, float))
+        or not math.isfinite(float(weight))
+        or weight < 0
+    ):
+        raise ValueError(f"{weighting_key} must be finite and non-negative")
+    local_steps = metrics.get("local_steps")
+    if (
+        isinstance(local_steps, bool)
+        or not isinstance(local_steps, int)
+        or local_steps <= 0
+    ):
+        raise ValueError("local_steps must be a positive integer")
+    return metrics
 
 
 def aggregate_fednova(
@@ -37,9 +66,14 @@ def aggregate_fednova(
     global_keys = tuple(global_arrays.keys())
     global_values = {name: value.numpy() for name, value in global_arrays.items()}
 
+    metric_keys: frozenset[str] | None = None
     for record in records:
         local_arrays = _single_arrays(record)
-        metrics = _single_metrics(record)
+        metrics = _protocol_metrics(record, "FedNova", weighting_key)
+        if metric_keys is None:
+            metric_keys = frozenset(metrics.keys())
+        elif frozenset(metrics.keys()) != metric_keys:
+            raise ValueError("FedNova replies must contain the same metric structure")
         if tuple(local_arrays.keys()) != global_keys:
             raise ValueError("FedNova array structure does not match the global model")
         for name, value in local_arrays.items():
@@ -48,7 +82,7 @@ def aggregate_fednova(
 
         if "local_normalizer" not in metrics:
             raise ValueError("FedNova reply is missing local_normalizer")
-        examples = float(metrics.get(weighting_key, 0.0))
+        examples = float(metrics[weighting_key])
         normalizer = float(metrics["local_normalizer"])
         if not math.isfinite(examples) or examples < 0:
             raise ValueError(f"{weighting_key} must be finite and non-negative")
@@ -144,6 +178,7 @@ def aggregate_scaffold(
     records: list[RecordDict],
     total_clients: int,
     server_learning_rate: float,
+    weighting_key: str = "num-examples",
 ) -> tuple[ArrayRecord, ArrayRecord]:
     """Apply the SCAFFOLD model and global-control updates."""
     if not records:
@@ -159,7 +194,15 @@ def aggregate_scaffold(
     )
     local_models: list[dict[str, np.ndarray]] = []
     control_deltas: list[dict[str, np.ndarray]] = []
+    total_weight = 0.0
+    metric_keys: frozenset[str] | None = None
     for record in records:
+        metrics = _protocol_metrics(record, "SCAFFOLD", weighting_key)
+        if metric_keys is None:
+            metric_keys = frozenset(metrics.keys())
+        elif frozenset(metrics.keys()) != metric_keys:
+            raise ValueError("SCAFFOLD replies must contain the same metric structure")
+        total_weight += float(metrics[weighting_key])
         model_record = record.get("arrays")
         if not isinstance(model_record, ArrayRecord):
             raise ValueError("SCAFFOLD reply is missing arrays")
@@ -174,6 +217,8 @@ def aggregate_scaffold(
                 control_values, delta_record, "client control delta"
             )
         )
+    if total_weight <= 0:
+        raise ValueError("SCAFFOLD total example weight must be positive")
 
     next_model: dict[str, np.ndarray] = {}
     next_control: dict[str, np.ndarray] = {}
@@ -211,7 +256,6 @@ class ScaffoldStrategy(FedAvg):
         config: ConfigRecord,
         grid: Grid,
     ) -> Iterable[Message]:
-        self._total_clients = len(list(grid.get_node_ids()))
         self._current_global_arrays = _array_record(
             {name: value.numpy().copy() for name, value in arrays.items()}
         )
@@ -222,10 +266,23 @@ class ScaffoldStrategy(FedAvg):
                     for name, value in arrays.items()
                 }
             )
-        messages = list(super().configure_train(server_round, arrays, config, grid))
-        for message in messages:
-            message.content["scaffold-server-control"] = self._server_control
-        return messages
+        if self.fraction_train == 0.0:
+            return []
+        num_nodes = int(len(list(grid.get_node_ids())) * self.fraction_train)
+        sample_size = max(num_nodes, self.min_train_nodes)
+        node_ids, all_node_ids = sample_nodes(
+            grid, self.min_available_nodes, sample_size
+        )
+        self._total_clients = len(all_node_ids)
+        config["server-round"] = server_round
+        record = RecordDict(
+            {
+                self.arrayrecord_key: arrays,
+                self.configrecord_key: config,
+                "scaffold-server-control": self._server_control,
+            }
+        )
+        return self._construct_messages(record, node_ids, MessageType.TRAIN)
 
     def aggregate_train(
         self, server_round: int, replies: Iterable[Message]
@@ -245,6 +302,8 @@ class ScaffoldStrategy(FedAvg):
             contents,
             self._total_clients,
             self.server_learning_rate,
+            self.weighted_by_key,
         )
+        metrics = self.train_metrics_aggr_fn(contents, self.weighted_by_key)
         self._server_control = next_control
-        return next_model, self.train_metrics_aggr_fn(contents, self.weighted_by_key)
+        return next_model, metrics
