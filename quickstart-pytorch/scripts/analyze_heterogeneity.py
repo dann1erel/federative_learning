@@ -174,7 +174,9 @@ def upsert_metric_rows(path: str | Path, rows: Sequence[Mapping[str, object]]) -
             delete=False,
         ) as handle:
             temporary_path = Path(handle.name)
-            writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS)
+            writer = csv.DictWriter(
+                handle, fieldnames=CSV_FIELDS, lineterminator="\n"
+            )
             writer.writeheader()
             for row in combined:
                 writer.writerow(

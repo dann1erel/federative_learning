@@ -19,12 +19,12 @@
         "strategy": "fedadagrad"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_fedadagrad",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -52,7 +52,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131604_cifar10_dirichlet-a0.5_clients10_seed42_fedadagrad",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131604_cifar10_dirichlet-a0.5_clients10_seed42_fedadagrad",
       "status": "completed"
     },
     "cifar10_dirichlet-a0.5_clients10_seed42_fedadam": {
@@ -73,12 +73,12 @@
         "strategy": "fedadam"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_fedadam",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -106,7 +106,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131409_cifar10_dirichlet-a0.5_clients10_seed42_fedadam",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131409_cifar10_dirichlet-a0.5_clients10_seed42_fedadam",
       "status": "completed"
     },
     "cifar10_dirichlet-a0.5_clients10_seed42_fedavg": {
@@ -127,12 +127,12 @@
         "strategy": "fedavg"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_fedavg",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -160,7 +160,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131123_cifar10_dirichlet-a0.5_clients10_seed42_fedavg",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131123_cifar10_dirichlet-a0.5_clients10_seed42_fedavg",
       "status": "completed"
     },
     "cifar10_dirichlet-a0.5_clients10_seed42_fedavgm": {
@@ -181,12 +181,12 @@
         "strategy": "fedavgm"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_fedavgm",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -214,7 +214,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131220_cifar10_dirichlet-a0.5_clients10_seed42_fedavgm",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131220_cifar10_dirichlet-a0.5_clients10_seed42_fedavgm",
       "status": "completed"
     },
     "cifar10_dirichlet-a0.5_clients10_seed42_fednova": {
@@ -235,12 +235,12 @@
         "strategy": "fednova"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_fednova",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -268,7 +268,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131700_cifar10_dirichlet-a0.5_clients10_seed42_fednova",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131700_cifar10_dirichlet-a0.5_clients10_seed42_fednova",
       "status": "completed"
     },
     "cifar10_dirichlet-a0.5_clients10_seed42_fedprox": {
@@ -289,12 +289,12 @@
         "strategy": "fedprox"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_fedprox",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -322,7 +322,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131313_cifar10_dirichlet-a0.5_clients10_seed42_fedprox",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131313_cifar10_dirichlet-a0.5_clients10_seed42_fedprox",
       "status": "completed"
     },
     "cifar10_dirichlet-a0.5_clients10_seed42_fedyogi": {
@@ -343,12 +343,12 @@
         "strategy": "fedyogi"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_fedyogi",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -376,7 +376,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131507_cifar10_dirichlet-a0.5_clients10_seed42_fedyogi",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131507_cifar10_dirichlet-a0.5_clients10_seed42_fedyogi",
       "status": "completed"
     },
     "cifar10_dirichlet-a0.5_clients10_seed42_moon": {
@@ -397,12 +397,12 @@
         "strategy": "moon"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_moon",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -430,7 +430,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131854_cifar10_dirichlet-a0.5_clients10_seed42_moon",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131854_cifar10_dirichlet-a0.5_clients10_seed42_moon",
       "status": "completed"
     },
     "cifar10_dirichlet-a0.5_clients10_seed42_scaffold": {
@@ -451,12 +451,12 @@
         "strategy": "scaffold"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "cifar10_dirichlet-a0.5_clients10_seed42_scaffold",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "cifar10",
         "--dataset-root",
@@ -484,7 +484,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/cifar10/20260921-131757_cifar10_dirichlet-a0.5_clients10_seed42_scaffold",
+      "experiment_dir": "results/aggregation-pilot/runs/cifar10/20260921-131757_cifar10_dirichlet-a0.5_clients10_seed42_scaffold",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_fedadagrad": {
@@ -505,12 +505,12 @@
         "strategy": "fedadagrad"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_fedadagrad",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -538,7 +538,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-133239_ham10000_dirichlet-a0.5_clients10_seed42_fedadagrad",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-133239_ham10000_dirichlet-a0.5_clients10_seed42_fedadagrad",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_fedadam": {
@@ -559,12 +559,12 @@
         "strategy": "fedadam"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_fedadam",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -592,7 +592,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-132713_ham10000_dirichlet-a0.5_clients10_seed42_fedadam",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-132713_ham10000_dirichlet-a0.5_clients10_seed42_fedadam",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_fedavg": {
@@ -613,12 +613,12 @@
         "strategy": "fedavg"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_fedavg",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -646,7 +646,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-132010_ham10000_dirichlet-a0.5_clients10_seed42_fedavg",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-132010_ham10000_dirichlet-a0.5_clients10_seed42_fedavg",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_fedavgm": {
@@ -667,12 +667,12 @@
         "strategy": "fedavgm"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_fedavgm",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -700,7 +700,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-132223_ham10000_dirichlet-a0.5_clients10_seed42_fedavgm",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-132223_ham10000_dirichlet-a0.5_clients10_seed42_fedavgm",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_fednova": {
@@ -721,12 +721,12 @@
         "strategy": "fednova"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_fednova",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -754,7 +754,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-133529_ham10000_dirichlet-a0.5_clients10_seed42_fednova",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-133529_ham10000_dirichlet-a0.5_clients10_seed42_fednova",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_fedprox": {
@@ -775,12 +775,12 @@
         "strategy": "fedprox"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_fedprox",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -808,7 +808,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-132435_ham10000_dirichlet-a0.5_clients10_seed42_fedprox",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-132435_ham10000_dirichlet-a0.5_clients10_seed42_fedprox",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_fedyogi": {
@@ -829,12 +829,12 @@
         "strategy": "fedyogi"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_fedyogi",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -862,7 +862,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-132955_ham10000_dirichlet-a0.5_clients10_seed42_fedyogi",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-132955_ham10000_dirichlet-a0.5_clients10_seed42_fedyogi",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_moon": {
@@ -883,12 +883,12 @@
         "strategy": "moon"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_moon",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -916,7 +916,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-134110_ham10000_dirichlet-a0.5_clients10_seed42_moon",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-134110_ham10000_dirichlet-a0.5_clients10_seed42_moon",
       "status": "completed"
     },
     "ham10000_dirichlet-a0.5_clients10_seed42_scaffold": {
@@ -937,12 +937,12 @@
         "strategy": "scaffold"
       },
       "command": [
-        "/Volumes/T7/Masters/federative_learning/quickstart-pytorch/venv/bin/python",
+        "python",
         "scripts/run_experiment.py",
         "--name",
         "ham10000_dirichlet-a0.5_clients10_seed42_scaffold",
         "--results-root",
-        "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs",
+        "results/aggregation-pilot/runs",
         "--dataset",
         "ham10000",
         "--dataset-root",
@@ -970,7 +970,7 @@
         "0.5"
       ],
       "exit_code": 0,
-      "experiment_dir": "/Volumes/T7/Masters/federative_learning/.worktrees/aggregation-heterogeneity/quickstart-pytorch/results/aggregation-pilot/runs/ham10000/20260921-133819_ham10000_dirichlet-a0.5_clients10_seed42_scaffold",
+      "experiment_dir": "results/aggregation-pilot/runs/ham10000/20260921-133819_ham10000_dirichlet-a0.5_clients10_seed42_scaffold",
       "status": "completed"
     }
   },

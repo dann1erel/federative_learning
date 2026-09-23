@@ -525,6 +525,13 @@ class RunnerCliTests(unittest.TestCase):
 
         self.assertEqual(args.local_momentum, 0.4)
 
+    def test_parse_args_accepts_dirichlet_min_partition_size_override(self):
+        args = parse_args(
+            ["--num-clients", "3", "--dirichlet-min-partition-size", "73"]
+        )
+
+        self.assertEqual(args.dirichlet_min_partition_size, 73)
+
     def test_parse_args_accepts_moon_overrides(self):
         args = parse_args(
             [

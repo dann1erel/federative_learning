@@ -64,6 +64,7 @@ class HeterogeneityAnalysisTests(unittest.TestCase):
             self.assertEqual(values[("ham10000", "42")], "0.75")
             self.assertEqual(values[("cifar10", "7")], "0.1")
             self.assertFalse(any(path.parent.glob(f".{path.name}.*.tmp")))
+            self.assertNotIn(b"\r\n", path.read_bytes())
 
     def test_analyze_writes_tidy_rows_group_counts_and_plots(self):
         summary = PartitionCounts(

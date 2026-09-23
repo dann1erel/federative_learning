@@ -21,6 +21,7 @@ from pytorchexample.benchmark import (
     COMPLETED_STATUSES,
     BenchmarkCase,
     manifest_matches_case,
+    resolve_experiment_dir,
 )
 
 
@@ -215,7 +216,9 @@ def _write_rows(path: Path, rows: Sequence[Mapping[str, object]]) -> None:
             delete=False,
         ) as handle:
             temporary_path = Path(handle.name)
-            writer = csv.DictWriter(handle, fieldnames=OUTPUT_FIELDS)
+            writer = csv.DictWriter(
+                handle, fieldnames=OUTPUT_FIELDS, lineterminator="\n"
+            )
             writer.writeheader()
             writer.writerows(rows)
         temporary_path.replace(path)
@@ -246,7 +249,11 @@ def collect_benchmark(
             diagnostics.append(f"no completed experiment artifacts (status={row['status']})")
         else:
             experiment_value = raw_entry.get("experiment_dir")
-            experiment_dir = Path(experiment_value) if isinstance(experiment_value, str) else None
+            experiment_dir = (
+                resolve_experiment_dir(experiment_value, project)
+                if isinstance(experiment_value, str)
+                else None
+            )
             if experiment_dir is None or not experiment_dir.is_dir():
                 diagnostics.append("missing experiment directory")
             else:

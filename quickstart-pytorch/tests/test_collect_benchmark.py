@@ -107,6 +107,48 @@ class BenchmarkCollectorTests(unittest.TestCase):
                 disk_rows = list(csv.DictReader(handle))
             self.assertEqual(len(disk_rows), 4)
             self.assertEqual(disk_rows[0]["dataset"], "cifar10")
+            self.assertNotIn(b"\r\n", output.read_bytes())
+
+    def test_relative_artifact_paths_survive_project_relocation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent = Path(directory)
+            original = parent / "original"
+            case = make_case("fedavg")
+            relative_experiment = Path("results/pilot/runs/completed")
+            experiment_dir = self.write_completed_experiment(
+                original / relative_experiment,
+                case,
+                "completed",
+                project_root=original,
+            )
+            state_path = original / "results" / "pilot" / "state.json"
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "benchmark_id": "fixture",
+                        "cases": {
+                            case.case_id: state_entry(
+                                case, "completed", relative_experiment, 0
+                            )
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            relocated = parent / "relocated"
+            original.rename(relocated)
+
+            rows = collect_benchmark(
+                relocated / "results" / "pilot" / "state.json",
+                relocated / "summary.csv",
+                project_root=relocated,
+            )
+
+            self.assertEqual(rows[0]["status"], "completed")
+            self.assertEqual(rows[0]["final_accuracy"], 0.4)
+            self.assertEqual(rows[0]["experiment_dir"], str(relative_experiment))
+            self.assertEqual(rows[0]["diagnostics"], "")
 
     def test_completed_case_reports_missing_metrics(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -141,15 +183,17 @@ class BenchmarkCollectorTests(unittest.TestCase):
             self.assertIn("missing client_metrics.csv", rows[0]["diagnostics"])
             self.assertEqual(rows[0]["final_client_accuracy_std"], "")
 
-    def write_completed_experiment(self, path, case, status):
-        path.mkdir()
+    def write_completed_experiment(
+        self, path, case, status, *, project_root=PROJECT_ROOT
+    ):
+        path.mkdir(parents=True)
         manifest = {
             "status": status,
             "duration_seconds": 12.5,
             "warnings": [],
             "effective_config": {
                 "dataset": case.dataset,
-                "dataset-root": str((PROJECT_ROOT / case.dataset_root).resolve()),
+                "dataset-root": str((project_root / case.dataset_root).resolve()),
                 "partitioner": case.partitioner,
                 "dirichlet-alpha": case.dirichlet_alpha,
                 "dirichlet-min-partition-size": case.min_partition_size,

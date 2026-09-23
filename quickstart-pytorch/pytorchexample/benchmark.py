@@ -213,7 +213,14 @@ def build_experiment_command(
         "--no-save-model",
     ]
     if case.partitioner == "dirichlet":
-        command.extend(["--dirichlet-alpha", f"{case.dirichlet_alpha:g}"])
+        command.extend(
+            [
+                "--dirichlet-alpha",
+                f"{case.dirichlet_alpha:g}",
+                "--dirichlet-min-partition-size",
+                str(case.min_partition_size),
+            ]
+        )
     return command
 
 
@@ -245,10 +252,55 @@ def manifest_matches_case(
     configured_root = config.get("dataset-root")
     if not isinstance(configured_root, str):
         return False
-    expected_root = _resolve_project_path(Path(project_root), case.dataset_root).resolve()
-    if Path(configured_root).resolve() != expected_root:
+    project = Path(project_root).resolve()
+    expected_root = _resolve_project_path(project, case.dataset_root).resolve()
+    configured_path = Path(configured_root)
+    configured_path = (
+        configured_path.resolve()
+        if configured_path.is_absolute()
+        else (project / configured_path).resolve()
+    )
+    relative_root = Path(case.dataset_root)
+    relocated_root_matches = (
+        not relative_root.is_absolute()
+        and len(relative_root.parts) > 0
+        and configured_path.parts[-len(relative_root.parts) :] == relative_root.parts
+    )
+    if configured_path != expected_root and not relocated_root_matches:
         return False
     return federation.get("num-supernodes") == case.num_clients
+
+
+def resolve_experiment_dir(value: str | Path, project_root: str | Path) -> Path:
+    """Resolve a state artifact path, retaining support for legacy absolute paths."""
+    path = Path(value)
+    return path if path.is_absolute() else Path(project_root).resolve() / path
+
+
+def _portable_experiment_dir(path: Path, project_root: Path) -> str:
+    absolute = Path(path).resolve()
+    try:
+        return str(absolute.relative_to(project_root.resolve()))
+    except ValueError:
+        return str(absolute)
+
+
+def _portable_command(command: Sequence[str], project_root: Path) -> list[str]:
+    portable = []
+    project = project_root.resolve()
+    for index, value in enumerate(command):
+        path = Path(value)
+        if index == 0 and path.is_absolute():
+            portable.append(path.name)
+            continue
+        if path.is_absolute():
+            try:
+                portable.append(str(path.resolve().relative_to(project)))
+                continue
+            except ValueError:
+                pass
+        portable.append(value)
+    return portable
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -263,7 +315,7 @@ def reusable_entry(
     experiment_dir = entry.get("experiment_dir")
     if not isinstance(experiment_dir, str):
         return False
-    manifest_path = Path(experiment_dir) / "experiment.json"
+    manifest_path = resolve_experiment_dir(experiment_dir, project_root) / "experiment.json"
     if not manifest_path.is_file():
         return False
     try:
@@ -319,9 +371,29 @@ def run_benchmark(
     state = load_state(plan)
     entries = state["cases"]
     assert isinstance(entries, dict)
+    state_changed = False
     for case in plan.cases:
         existing = entries.get(case.case_id)
         if reusable_entry(existing, case, project):
+            assert isinstance(existing, Mapping)
+            updates = {}
+            experiment_dir = existing.get("experiment_dir")
+            if isinstance(experiment_dir, str):
+                portable_dir = _portable_experiment_dir(
+                    resolve_experiment_dir(experiment_dir, project), project
+                )
+                if portable_dir != experiment_dir:
+                    updates["experiment_dir"] = portable_dir
+            stored_command = existing.get("command")
+            if isinstance(stored_command, list) and all(
+                isinstance(value, str) for value in stored_command
+            ):
+                portable_command = _portable_command(stored_command, project)
+                if portable_command != stored_command:
+                    updates["command"] = portable_command
+            if updates:
+                entries[case.case_id] = {**existing, **updates}
+                state_changed = True
             continue
         command = build_experiment_command(
             case,
@@ -332,7 +404,7 @@ def run_benchmark(
         entries[case.case_id] = {
             "status": "running",
             "case": case.as_dict(),
-            "command": command,
+            "command": _portable_command(command, project),
             "experiment_dir": None,
             "exit_code": None,
         }
@@ -348,11 +420,17 @@ def run_benchmark(
         entries[case.case_id] = {
             "status": status,
             "case": case.as_dict(),
-            "command": command,
-            "experiment_dir": str(experiment_dir) if experiment_dir else None,
+            "command": _portable_command(command, project),
+            "experiment_dir": (
+                _portable_experiment_dir(experiment_dir, project)
+                if experiment_dir
+                else None
+            ),
             "exit_code": result.exit_code,
         }
         _write_state(plan.state_path, state)
         if status not in COMPLETED_STATUSES and not plan.continue_on_error:
             break
+    if state_changed:
+        _write_state(plan.state_path, state)
     return state

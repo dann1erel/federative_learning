@@ -58,7 +58,7 @@ class BenchmarkMatrixTests(unittest.TestCase):
         self.assertTrue(all(case.learning_rate == 0.01 for case in plan.cases))
 
     def test_case_id_and_command_are_deterministic(self):
-        case = make_case(strategy="fedprox")
+        case = make_case(strategy="fedprox", min_partition_size=73)
 
         command = build_experiment_command(
             case,
@@ -76,6 +76,10 @@ class BenchmarkMatrixTests(unittest.TestCase):
         self.assertIn("--no-save-model", command)
         self.assertEqual(command[command.index("--strategy") + 1], "fedprox")
         self.assertEqual(command[command.index("--learning-rate") + 1], "0.01")
+        self.assertEqual(
+            command[command.index("--dirichlet-min-partition-size") + 1],
+            "73",
+        )
 
     def test_dry_run_cli_prints_exactly_eighteen_pending_cases(self):
         output = io.StringIO()
@@ -179,15 +183,51 @@ class BenchmarkResumeTests(unittest.TestCase):
             self.assertEqual(json.loads(plan.state_path.read_text()), state)
             self.assertFalse(any(root.glob(".state.json.*.tmp")))
 
+    def test_experiment_inside_project_is_stored_as_relative_path(self):
+        case = make_case()
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            experiment_dir = project / "results" / "pilot" / "runs" / "completed"
+            experiment_dir.mkdir(parents=True)
+            (experiment_dir / "experiment.json").write_text(
+                json.dumps(completed_manifest(case, project)),
+                encoding="utf-8",
+            )
+            plan = BenchmarkPlan(
+                benchmark_id="fixture",
+                results_root=project / "results" / "pilot" / "runs",
+                state_path=project / "results" / "pilot" / "state.json",
+                continue_on_error=True,
+                cases=(case,),
+            )
 
-def make_case(*, strategy="fedavg"):
+            state = run_benchmark(
+                plan,
+                project_root=project,
+                python_executable=sys.executable,
+                execute=lambda *_: ExecutionResult(0, experiment_dir),
+            )
+
+            self.assertEqual(
+                state["cases"][case.case_id]["experiment_dir"],
+                "results/pilot/runs/completed",
+            )
+            stored_command = state["cases"][case.case_id]["command"]
+            self.assertEqual(stored_command[0], "python")
+            self.assertEqual(
+                stored_command[stored_command.index("--results-root") + 1],
+                "results/pilot/runs",
+            )
+
+
+def make_case(*, strategy="fedavg", min_partition_size=50):
     return BenchmarkCase(
         benchmark_id="fixture",
         dataset="cifar10",
         dataset_root="data/ham10000",
         partitioner="dirichlet",
         dirichlet_alpha=0.5,
-        min_partition_size=50,
+        min_partition_size=min_partition_size,
         class_weighting="none",
         seed=42,
         num_clients=10,

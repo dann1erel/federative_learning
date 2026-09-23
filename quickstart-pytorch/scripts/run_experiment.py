@@ -242,6 +242,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     _add_config_override(parser, "--dataset-root", "dataset_root")
     _add_config_override(parser, "--partitioner", "partitioner")
     _add_config_override(parser, "--dirichlet-alpha", "dirichlet_alpha", type=float)
+    _add_config_override(
+        parser,
+        "--dirichlet-min-partition-size",
+        "dirichlet_min_partition_size",
+        type=int,
+    )
     _add_config_override(parser, "--class-weighting", "class_weighting")
     _add_config_override(parser, "--seed", "seed", type=int)
     _add_config_override(parser, "--rounds", "num_server_rounds", type=int)
@@ -377,6 +383,7 @@ def _cli_config_values(args: argparse.Namespace) -> dict[str, Scalar]:
         "dataset_root": "dataset-root",
         "partitioner": "partitioner",
         "dirichlet_alpha": "dirichlet-alpha",
+        "dirichlet_min_partition_size": "dirichlet-min-partition-size",
         "class_weighting": "class-weighting",
         "seed": "seed",
         "num_server_rounds": "num-server-rounds",
