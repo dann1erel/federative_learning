@@ -61,6 +61,29 @@ python scripts/run_experiment.py \
   --save-model
 ```
 
+По умолчанию Flower выделяет каждому виртуальному клиенту 2 CPU (это жёстко
+задано в симуляционном бэкенде Ray) — при `--num-clients 10` это до 5 клиентов
+одновременно. Если процесс клиента убивает по памяти (OOM), увеличьте число
+CPU на клиента флагом `--client-num-cpus`, чтобы уменьшить параллелизм:
+
+```bash
+python scripts/run_experiment.py \
+  --config configs/ham10000_dirichlet.toml \
+  --name baseline \
+  --num-clients 10 \
+  --rounds 20 \
+  --learning-rate 0.01 \
+  --client-num-cpus 4 \
+  --save-model
+```
+
+Значения `options.backend.client-resources.*` в `~/.flwr/config.toml`
+**не действуют**: `run_experiment.py` всегда передаёт `flwr run` флаг
+`--federation-config`, а Flower при его наличии полностью игнорирует
+`options.*` из конфигурации SuperLink (с предупреждением). Поэтому
+управлять ресурсами клиента нужно только через `--client-num-cpus` /
+`--client-num-gpus`, а не через глобальный конфиг Flower.
+
 Для этой команды результат записывается в каталог вида
 `results/ham10000/YYYYMMDD-HHMMSS_baseline/`:
 

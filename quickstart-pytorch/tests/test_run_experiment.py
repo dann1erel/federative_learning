@@ -265,6 +265,28 @@ class RunnerConfigurationTests(unittest.TestCase):
         self.assertIn("save-model=true", run_config)
         self.assertEqual(command[-2:], ["--federation-config", "num-supernodes=4"])
 
+    def test_build_command_includes_client_resources_when_requested(self):
+        command = build_flwr_command(
+            Path("/tmp/project"),
+            {
+                "dataset": "ham10000",
+                "dataset-root": "data/ham10000",
+                "experiment-dir": "results/run-1",
+            },
+            4,
+            client_num_cpus=4,
+            client_num_gpus=0.5,
+        )
+
+        self.assertEqual(
+            command[-2:],
+            [
+                "--federation-config",
+                "num-supernodes=4 client-resources-num-cpus=4 "
+                "client-resources-num-gpus=0.5",
+            ],
+        )
+
     def test_build_command_preserves_relative_project_root_in_argv(self):
         project_root = Path("relative/project")
 

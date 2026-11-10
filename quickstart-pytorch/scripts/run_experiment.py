@@ -103,7 +103,12 @@ def make_experiment_slug(config: Mapping[str, Scalar], name: str | None) -> str:
 
 
 def build_flwr_command(
-    project_root: Path, app_config: Mapping[str, Scalar], num_clients: int
+    project_root: Path,
+    app_config: Mapping[str, Scalar],
+    num_clients: int,
+    *,
+    client_num_cpus: int | None = None,
+    client_num_gpus: float | None = None,
 ) -> list[str]:
     validated_config = _validated_flat_mapping(app_config, source="app config")
     project_path = Path(project_root)
@@ -126,6 +131,12 @@ def build_flwr_command(
         for key, value in normalized_config.items()
     ]
 
+    federation_tokens = [f"num-supernodes={num_clients}"]
+    if client_num_cpus is not None:
+        federation_tokens.append(f"client-resources-num-cpus={client_num_cpus}")
+    if client_num_gpus is not None:
+        federation_tokens.append(f"client-resources-num-gpus={client_num_gpus}")
+
     return [
         "flwr",
         "run",
@@ -134,7 +145,7 @@ def build_flwr_command(
         "--run-config",
         " ".join(serialized_tokens),
         "--federation-config",
-        f"num-supernodes={num_clients}",
+        " ".join(federation_tokens),
     ]
 
 
@@ -276,6 +287,22 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=float,
     )
     parser.add_argument("--num-clients", type=int, required=True)
+    parser.add_argument(
+        "--client-num-cpus",
+        type=int,
+        default=None,
+        help=(
+            "CPUs reserved per simulated client (Flower's simulation default is "
+            "2). Lower concurrency (higher CPU count per client) to reduce peak "
+            "memory usage and avoid clients being OOM-killed."
+        ),
+    )
+    parser.add_argument(
+        "--client-num-gpus",
+        type=float,
+        default=None,
+        help="Fraction of GPU VRAM reserved per simulated client.",
+    )
     model_group = parser.add_mutually_exclusive_group()
     model_group.add_argument(
         "--save-model", dest="save_model", action="store_true", default=argparse.SUPPRESS
@@ -296,6 +323,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     _validate_config(config)
     if args.num_clients <= 0:
         raise ValueError("num-clients must be positive")
+    if args.client_num_cpus is not None and args.client_num_cpus <= 0:
+        raise ValueError("client-num-cpus must be positive")
+    if args.client_num_gpus is not None and args.client_num_gpus < 0:
+        raise ValueError("client-num-gpus must be non-negative")
 
     experiment_dir = create_experiment_dir(
         args.results_root,
@@ -303,13 +334,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         make_experiment_slug(config, args.name),
     ).resolve()
     config["experiment-dir"] = str(experiment_dir)
-    command = build_flwr_command(PROJECT_ROOT, config, args.num_clients)
+    command = build_flwr_command(
+        PROJECT_ROOT,
+        config,
+        args.num_clients,
+        client_num_cpus=args.client_num_cpus,
+        client_num_gpus=args.client_num_gpus,
+    )
+    federation_config: dict[str, Scalar] = {"num-supernodes": args.num_clients}
+    if args.client_num_cpus is not None:
+        federation_config["client-resources-num-cpus"] = args.client_num_cpus
+    if args.client_num_gpus is not None:
+        federation_config["client-resources-num-gpus"] = args.client_num_gpus
     code = _run_lifecycle(
         command,
         PROJECT_ROOT,
         experiment_dir,
         config,
-        {"num-supernodes": args.num_clients},
+        federation_config,
         name=args.name,
     )
     print(experiment_dir)
