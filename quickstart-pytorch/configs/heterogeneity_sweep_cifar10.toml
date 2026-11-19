@@ -1,0 +1,94 @@
+# Этап 1 исследования «кривые деградации при росте неоднородности».
+# План: ../исследование/Чекпоинт_1_план_исследования.md, раздел 6.
+#
+# Перед запуском:
+#   1) пройти контрольную точку 0 (проверка SCAFFOLD/FedAdagrad, настройка lr);
+#   2) запустить analyze_heterogeneity.py для каждого alpha и seed, чтобы
+#      у каждой точки кривой были измеренные метрики неоднородности.
+# Объём: 7 стратегий x 8 сценариев x 3 seeds = 168 запусков,
+# ~10 мин на запуск на CPU M1 при 50 раундах -> ~28 ч последовательно.
+
+[benchmark]
+id = "heterogeneity-sweep-cifar10"
+results-root = "results/heterogeneity-sweep-cifar10/runs"
+state-path = "results/heterogeneity-sweep-cifar10/benchmark_state.json"
+continue-on-error = true
+strategies = [
+  "fedavg",
+  "fedavgm",
+  "fedprox",
+  "fedadam",
+  "fednova",
+  "scaffold",
+  "moon",
+]
+seeds = [42, 43, 44]
+num-clients = 10
+rounds = 50
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.01
+dirichlet-min-partition-size = 50
+
+[[scenarios]]
+id = "cifar10-iid"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "iid"
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a5"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 5.0
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a2"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 2.0
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a1"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 1.0
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.5"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.5
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.2"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.2
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.1"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.1
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.05"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.05
+class-weighting = "none"
