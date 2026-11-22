@@ -392,11 +392,12 @@ def _run_lifecycle(
         )
         exit_code = run_and_capture(command, project_root, Path(experiment_dir) / "console.log")
         previous_status = read_json(manifest_path).get("status")
-        status = "failed" if exit_code else (
-            "completed_with_warnings"
-            if previous_status == "completed_with_warnings"
-            else "completed"
-        )
+        if exit_code == 0 and previous_status not in {"completed", "completed_with_warnings"}:
+            # A successful CLI log stream can end even when the remote task failed.
+            print(f"Flower server did not finalize the experiment (status={previous_status})",
+                  file=sys.stderr)
+            exit_code = 1
+        status = "failed" if exit_code else previous_status
         _finalize_lifecycle(experiment_dir, started_at, status, exit_code)
         return exit_code
     except KeyboardInterrupt:

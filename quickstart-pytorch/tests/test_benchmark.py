@@ -14,6 +14,7 @@ from pytorchexample.benchmark import (
     build_experiment_command,
     load_benchmark_plan,
     manifest_matches_case,
+    reusable_entry,
     run_benchmark,
 )
 from scripts.run_benchmark import main
@@ -23,6 +24,22 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class BenchmarkMatrixTests(unittest.TestCase):
+    def test_seed42_sweep_requests_gpu_and_rejects_cpu_manifest(self):
+        plan = load_benchmark_plan(
+            PROJECT_ROOT / "configs/cifar10_sweep_seed42.toml", project_root=PROJECT_ROOT
+        )
+        self.assertEqual(len({case.case_id for case in plan.cases}), 72)
+        for case in plan.cases:
+            command = build_experiment_command(
+                case, project_root=PROJECT_ROOT, results_root=plan.results_root,
+                python_executable=sys.executable,
+            )
+            self.assertEqual(command[command.index("--client-num-gpus") + 1], "0.5")
+            manifest = completed_manifest(case, PROJECT_ROOT)
+            self.assertFalse(manifest_matches_case(manifest, case, PROJECT_ROOT))
+            manifest["federation_config"]["client-resources-num-gpus"] = 0.5
+            self.assertTrue(manifest_matches_case(manifest, case, PROJECT_ROOT))
+
     def test_runner_is_directly_executable_from_project_root(self):
         completed = subprocess.run(
             [sys.executable, "scripts/run_benchmark.py", "--help"],
@@ -115,6 +132,12 @@ class BenchmarkResumeTests(unittest.TestCase):
                 json.dumps(completed_manifest(case, PROJECT_ROOT)),
                 encoding="utf-8",
             )
+            entry = {"status": "completed", "experiment_dir": str(experiment_dir)}
+            metrics = experiment_dir / "round_metrics.csv"
+            metrics.write_text("round,source\n0,centralized_test\n", encoding="utf-8")
+            self.assertFalse(reusable_entry(entry, case, PROJECT_ROOT))
+            with metrics.open("a", encoding="utf-8") as stream:
+                stream.write(f"{case.rounds},centralized_test\n")
             plan = BenchmarkPlan(
                 benchmark_id="fixture",
                 results_root=root / "runs",

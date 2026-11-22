@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import csv
 import json
+import math
 import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -44,6 +46,7 @@ class BenchmarkCase:
     batch_size: int
     learning_rate: float
     strategy: str
+    client_num_gpus: float | None = None
 
     @property
     def case_id(self) -> str:
@@ -132,6 +135,11 @@ def load_benchmark_plan(config_path: str | Path, *, project_root: str | Path) ->
     }
     if common["learning_rate"] <= 0:
         raise ValueError("learning-rate must be positive")
+    if "client-num-gpus" in benchmark:
+        gpus = benchmark["client-num-gpus"]
+        if type(gpus) not in (int, float) or not math.isfinite(gpus) or gpus < 0:
+            raise ValueError("client-num-gpus must be a finite non-negative number")
+        common["client_num_gpus"] = gpus
 
     cases = []
     for raw_scenario in scenarios:
@@ -212,6 +220,8 @@ def build_experiment_command(
         case.strategy,
         "--no-save-model",
     ]
+    if case.client_num_gpus is not None:
+        command.extend(["--client-num-gpus", str(case.client_num_gpus)])
     if case.partitioner == "dirichlet":
         command.extend(
             [
@@ -232,6 +242,11 @@ def manifest_matches_case(
     config = manifest.get("effective_config") or manifest.get("run_config")
     federation = manifest.get("federation_config")
     if not isinstance(config, Mapping) or not isinstance(federation, Mapping):
+        return False
+    if (
+        case.client_num_gpus is not None
+        and federation.get("client-resources-num-gpus") != case.client_num_gpus
+    ):
         return False
     expected = {
         "dataset": case.dataset,
@@ -319,8 +334,14 @@ def reusable_entry(
     if not manifest_path.is_file():
         return False
     try:
-        return manifest_matches_case(_read_json(manifest_path), case, project_root)
-    except (OSError, ValueError, json.JSONDecodeError):
+        if not manifest_matches_case(_read_json(manifest_path), case, project_root):
+            return False
+        with manifest_path.with_name("round_metrics.csv").open(encoding="utf-8", newline="") as stream:
+            return any(
+                row.get("source") == "centralized_test" and row.get("round") == str(case.rounds)
+                for row in csv.DictReader(stream)
+            )
+    except (OSError, ValueError, csv.Error):
         return False
 
 

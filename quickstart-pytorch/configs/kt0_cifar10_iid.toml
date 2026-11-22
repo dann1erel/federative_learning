@@ -1,0 +1,30 @@
+[benchmark]
+id = "kt0-cifar10-iid"
+results-root = "results/kt0-cifar10-iid/runs"
+state-path = "results/kt0-cifar10-iid/benchmark_state.json"
+continue-on-error = true
+strategies = [
+  "fedavg",
+  "fedavgm",
+  "fedprox",
+  "fedadam",
+  "fedyogi",
+  "fedadagrad",
+  "fednova",
+  "scaffold",
+  "moon",
+]
+seeds = [42]
+num-clients = 10
+rounds = 3
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.01
+dirichlet-min-partition-size = 50
+
+[[scenarios]]
+id = "cifar10-iid"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "iid"
+class-weighting = "none"

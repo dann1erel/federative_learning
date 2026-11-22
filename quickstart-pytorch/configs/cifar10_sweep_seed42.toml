@@ -1,0 +1,87 @@
+[benchmark]
+id = "cifar10-sweep-seed42"
+results-root = "results/cifar10-sweep-seed42/runs"
+state-path = "results/cifar10-sweep-seed42/benchmark_state.json"
+continue-on-error = false
+strategies = [
+  "fedavg",
+  "fedavgm",
+  "fedprox",
+  "fedadam",
+  "fedyogi",
+  "fedadagrad",
+  "fednova",
+  "scaffold",
+  "moon",
+]
+seeds = [42]
+num-clients = 10
+rounds = 50
+client-num-gpus = 0.5
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.01
+dirichlet-min-partition-size = 50
+
+[[scenarios]]
+id = "cifar10-iid"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "iid"
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a5"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 5.0
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a2"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 2.0
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a1"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 1.0
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.5"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.5
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.2"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.2
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.1"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.1
+class-weighting = "none"
+
+[[scenarios]]
+id = "cifar10-dirichlet-a0.05"
+dataset = "cifar10"
+dataset-root = "data/cifar10"
+partitioner = "dirichlet"
+dirichlet-alpha = 0.05
+class-weighting = "none"

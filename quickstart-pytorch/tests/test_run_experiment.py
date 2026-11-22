@@ -772,6 +772,7 @@ for token in shlex.split(run_config):
 
 manifest_path = pathlib.Path(config["experiment-dir"]) / "experiment.json"
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["status"] = "completed"
 """
         if warning_message is not None:
             body += f"""
@@ -839,6 +840,17 @@ class RunnerLifecycleTests(unittest.TestCase):
                 (experiment_dir / "console.log").read_text(encoding="utf-8").strip(),
                 "child failed",
             )
+
+    def test_successful_stream_without_server_finalization_marks_failed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            experiment_dir = Path(directory) / "result"
+            code = _run_lifecycle(
+                [sys.executable, "-c", "pass"], Path(directory), experiment_dir,
+                {"dataset": "fixture"}, {"num-supernodes": 2},
+            )
+            self.assertEqual(code, 1)
+            manifest = json.loads((experiment_dir / "experiment.json").read_text())
+            self.assertEqual(manifest["status"], "failed")
 
     def test_real_child_interrupt_marks_aborted_with_exit_130(self):
         with tempfile.TemporaryDirectory() as directory:
