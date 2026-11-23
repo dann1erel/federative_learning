@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Run from quickstart-pytorch with the project environment active.
+# Optional argument: output directory (default results/cifar10-sweep-seed42).
 set -euo pipefail
-out=results/cifar10-sweep-seed42
+out=${1:-results/cifar10-sweep-seed42}
 common=(--dataset cifar10 --dataset-root data/cifar10 --num-clients 10 --seed 42
         --min-partition-size 50 --output "$out/heterogeneity_metrics.csv"
         --artifacts-root "$out/heterogeneity")

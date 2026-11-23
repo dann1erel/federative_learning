@@ -204,7 +204,7 @@ def plot(rows, curves, directory):
         ax.set_title(NAMES[s])
         ax.set_xlim(0, 50)
         ax.grid(alpha=0.18)
-    fig.legend(*axes.flat[0].get_legend_handles_labels(), loc="outside lower center", ncol=3)
+    fig.legend(*axes.flat[0].get_legend_handles_labels(), loc="outside right upper", title="Разбиение")
     fig.suptitle("CIFAR-10, seed 42 · Качество глобальной модели по раундам")
     fig.supxlabel("Раунд")
     fig.supylabel("Тестовый macro-F1, %")
@@ -224,7 +224,7 @@ def threshold(points, level):
     return "на проверенных разбиениях не наблюдалось"
 
 
-def report(out, rows, curves):
+def report(out, rows, curves, config):
     used = {(PROJECT / row["experiment_dir"]).resolve() for row in rows.values()}
     previous = sorted(
         path.parent for path in (out / "runs" / "cifar10").glob("*/experiment.json")
@@ -240,7 +240,7 @@ def report(out, rows, curves):
         "",
         "## Лидеры по абсолютному Q и потери от собственного IID",
         "",
-        "| Разбиение | HD | Максимальный Q | Наименьшее изменение, п.п. | Минимум сохранённого Q |",
+        "| Разбиение | HD | Максимальный Q | Наибольшая потеря, п.п. | Минимум сохранённого Q |",
         "|---|---:|---|---|---|",
     ]
     for a in ALPHAS:
@@ -250,7 +250,7 @@ def report(out, rows, curves):
         worst = min(group, key=lambda r: r["delta_pp"])
         valid = [r for r in group if r["retained_pct"] is not None]
         relative = min(valid, key=lambda r: r["retained_pct"]) if valid else None
-        delta = f"{worst['strategy']} {worst['delta_pp']:+.2f}" if a is not None else "0,00"
+        delta = f"{worst['strategy']} {worst['delta_pp']:+.2f}" if a is not None else "0.00"
         retained = "—" if relative is None else f"{relative['strategy']} {relative['retained_pct']:.1f}%"
         if a is None and relative:
             retained = "100% при Q > 0"
@@ -275,9 +275,19 @@ def report(out, rows, curves):
         for s in NAMES if rows[s, None]["q"] <= 0.10
     ]
     chance_note = (
-        "На уровне равновероятной догадки или ниже остались " + ", ".join(near_chance) + "."
-        if near_chance else "Все девять стратегий превысили ориентир равновероятной догадки."
+        "На IID на уровне равновероятной догадки или ниже остались " + ", ".join(near_chance) + "."
+        if near_chance else "На IID все девять стратегий превысили ориентир равновероятной догадки."
     )
+    collapsed = [
+        f"{NAMES[s]} при {scenario(a)} (Q — {100 * rows[s, a]['q']:.2f}%)"
+        for s in NAMES for a in ALPHAS if a is not None and rows[s, a]["q"] <= 0.10
+    ]
+    if collapsed:
+        chance_note += (
+            " На неоднородных разбиениях ниже ориентира оказались " + ", ".join(collapsed)
+            + ". Такие точки означают вырождение обучения, а не плавную потерю качества; "
+            "проверьте матрицу ошибок запуска."
+        )
     lines.extend([
         "",
         f"Три наименьших Q уже на IID показали {lower}. Значение Q лучшей стратегии на IID "
@@ -299,13 +309,14 @@ def report(out, rows, curves):
         "",
         "```bash",
         "source venv/bin/activate",
-        "out=results/cifar10-sweep-seed42",
+        f"out={out.relative_to(PROJECT).as_posix()}",
+        f"config={config.resolve().relative_to(PROJECT).as_posix()}",
         'python scripts/prepare_cifar10.py --data-dir data/cifar10 --output-dir "$out/data-preview"',
-        "bash scripts/measure_cifar10_sweep.sh",
-        "python scripts/run_benchmark.py --config configs/cifar10_sweep_seed42.toml --dry-run",
-        "python scripts/run_benchmark.py --config configs/cifar10_sweep_seed42.toml",
+        'bash scripts/measure_cifar10_sweep.sh "$out"',
+        'python scripts/run_benchmark.py --config "$config" --dry-run',
+        'python scripts/run_benchmark.py --config "$config"',
         'python scripts/collect_benchmark.py --state "$out/benchmark_state.json" --output "$out/aggregation_benchmark.csv"',
-        "python scripts/analyze_cifar10_sweep.py",
+        'python scripts/analyze_cifar10_sweep.py --config "$config"',
         "```",
         "",
         "[Сводка 72 запусков](sweep_summary.csv) · [Стандартная сводка](aggregation_benchmark.csv) · "
@@ -337,7 +348,7 @@ def main():
         print(f"Готовы {len(curves)} из 72. Статусы и пропуски записаны в {out / 'sweep_summary.csv'}.")
         return 1
     plot(rows, curves, out / "plots")
-    report(out, rows, curves)
+    report(out, rows, curves, args.config)
     print(out / "summary.md")
     return 0
 
